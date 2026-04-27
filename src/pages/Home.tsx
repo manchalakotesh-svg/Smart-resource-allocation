@@ -50,12 +50,10 @@ export default function Home() {
             <a href="#how-it-works" className="hover:text-primary-400 transition-colors">How It Works</a>
             <a href="#testimonials" className="hover:text-primary-400 transition-colors">Stories</a>
           </div>
-          {user ? (
+          {user && (
             <button onClick={handlePortalRedirect} className="btn-primary text-sm py-2 px-4">
               Go to Dashboard →
             </button>
-          ) : (
-            <Link to="/auth/volunteer" className="btn-primary text-sm py-2 px-4">Join Now</Link>
           )}
         </div>
       </nav>

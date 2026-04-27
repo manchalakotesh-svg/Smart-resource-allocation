@@ -9,6 +9,7 @@ type Step = 'method' | 'otp' | 'profile'
 export default function VolunteerAuth() {
   const navigate = useNavigate()
   const [step, setStep] = useState<Step>('method')
+  const [isLogin, setIsLogin] = useState(false)
   const [method, setMethod] = useState<'email' | 'phone'>('email')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -60,6 +61,19 @@ export default function VolunteerAuth() {
           role: 'volunteer',
           approved: false,
         })
+        
+        // Check if profile exists
+        const { data: existingProfile } = await supabase
+          .from('volunteer_profiles')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .single()
+          
+        if (existingProfile) {
+          toast.success('Signed in successfully!')
+          navigate('/volunteer/dashboard')
+          return
+        }
       }
       toast.success('Verified! Complete your profile.')
       setStep('profile')
@@ -96,6 +110,21 @@ export default function VolunteerAuth() {
 
           {step === 'method' && (
             <div className="space-y-6 animate-in">
+              <div className="flex p-1 bg-gray-900 rounded-xl mb-2">
+                <button
+                  onClick={() => setIsLogin(false)}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${!isLogin ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  Create Account
+                </button>
+                <button
+                  onClick={() => setIsLogin(true)}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${isLogin ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  Sign In
+                </button>
+              </div>
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setMethod('email')}

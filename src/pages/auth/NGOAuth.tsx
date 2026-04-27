@@ -11,6 +11,7 @@ export default function NGOAuth() {
   const [otpSent, setOtpSent] = useState(false)
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<'auth' | 'profile'>('auth')
+  const [isLogin, setIsLogin] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
 
@@ -36,6 +37,19 @@ export default function NGOAuth() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         await supabase.from('users').upsert({ id: user.id, email: user.email, role: 'ngo', approved: false })
+        
+        // Check existing profile
+        const { data: existingProfile } = await supabase
+          .from('ngo_profiles')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .single()
+          
+        if (existingProfile) {
+          toast.success('Signed in successfully!')
+          navigate('/ngo/dashboard')
+          return
+        }
       }
       toast.success('Verified! Complete your NGO profile.')
       setStep('profile')
@@ -88,6 +102,20 @@ export default function NGOAuth() {
 
           {step === 'auth' ? (
             <div className="space-y-4 animate-in">
+              <div className="flex p-1 bg-gray-900 rounded-xl mb-4">
+                <button
+                  onClick={() => setIsLogin(false)}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${!isLogin ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  Create Account
+                </button>
+                <button
+                  onClick={() => setIsLogin(true)}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${isLogin ? 'bg-gray-800 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+                >
+                  Sign In
+                </button>
+              </div>
               <div>
                 <label className="text-sm text-gray-400 mb-1 block">Official NGO Email</label>
                 <div className="relative">
