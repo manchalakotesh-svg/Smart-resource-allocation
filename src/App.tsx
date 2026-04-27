@@ -8,6 +8,9 @@ import AdminAuth from './pages/auth/AdminAuth'
 import VolunteerDashboard from './pages/volunteer/Dashboard'
 import VolunteerProfile from './pages/volunteer/Profile'
 import BrowseNGOs from './pages/volunteer/BrowseNGOs'
+import VolunteerHistory from './pages/volunteer/History'
+import VolunteerBadges from './pages/volunteer/Badges'
+import VolunteerVideo from './pages/volunteer/Video'
 import NGODashboard from './pages/ngo/Dashboard'
 import NGOProfile from './pages/ngo/Profile'
 import PostOpportunity from './pages/ngo/PostOpportunity'
@@ -46,6 +49,15 @@ function AppRoutes() {
       } />
       <Route path="/volunteer/browse" element={
         <ProtectedRoute allowedRole="volunteer"><BrowseNGOs /></ProtectedRoute>
+      } />
+      <Route path="/volunteer/history" element={
+        <ProtectedRoute allowedRole="volunteer"><VolunteerHistory /></ProtectedRoute>
+      } />
+      <Route path="/volunteer/badges" element={
+        <ProtectedRoute allowedRole="volunteer"><VolunteerBadges /></ProtectedRoute>
+      } />
+      <Route path="/volunteer/video" element={
+        <ProtectedRoute allowedRole="volunteer"><VolunteerVideo /></ProtectedRoute>
       } />
       
       {/* NGO routes */}
