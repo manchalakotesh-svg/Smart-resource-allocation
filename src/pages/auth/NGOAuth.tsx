@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 
 export default function NGOAuth() {
   const navigate = useNavigate()
-  const { demoLogin } = useAuth()
+  const { user, signOut, demoLogin } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,6 +16,26 @@ export default function NGOAuth() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [showPass, setShowPass] = useState(false)
+
+  if (user) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+        <div className="card p-8 max-w-sm w-full text-center space-y-6 animate-in">
+          <div className="w-16 h-16 bg-secondary-500/20 rounded-full flex items-center justify-center mx-auto">
+            <Building2 className="w-8 h-8 text-secondary-400" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">Already Signed In</h2>
+            <p className="text-gray-400 text-sm mt-2">You must sign out of your current account before you can sign in or register a new NGO.</p>
+          </div>
+          <div className="space-y-3">
+            <button onClick={() => signOut()} className="btn-secondary w-full">Sign Out Now</button>
+            <button onClick={() => navigate(-1)} className="btn-outline w-full text-gray-400 border-gray-800">Go Back</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const isValidPassword = (pwd: string) => {
     return pwd.length >= 8 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd) && /[^A-Za-z0-9]/.test(pwd)
