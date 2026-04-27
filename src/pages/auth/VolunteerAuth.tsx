@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { Users, ArrowLeft, Mail, Phone, Eye, EyeOff } from 'lucide-react'
+import { Users, ArrowLeft, Mail, Phone, Eye, EyeOff, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type Step = 'method' | 'otp' | 'profile'
@@ -10,12 +10,67 @@ export default function VolunteerAuth() {
   const navigate = useNavigate()
   const [step, setStep] = useState<Step>('method')
   const [isLogin, setIsLogin] = useState(false)
-  const [method, setMethod] = useState<'email' | 'phone'>('email')
+  const [method, setMethod] = useState<'email' | 'phone' | 'password'>('password')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [password, setPassword] = useState('')
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [showOtpField, setShowOtpField] = useState(false)
+  const [showPass, setShowPass] = useState(false)
+
+  const isValidPassword = (pwd: string) => {
+    return pwd.length >= 8 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd) && /[^A-Za-z0-9]/.test(pwd)
+  }
+
+  const handleSuccessfulAuth = async (user: any) => {
+    if (user) {
+      await supabase.from('users').upsert({
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        role: 'volunteer',
+        approved: false,
+      })
+      
+      const { data: existingProfile } = await supabase
+        .from('volunteer_profiles')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .single()
+        
+      if (existingProfile) {
+        toast.success('Signed in successfully!')
+        navigate('/volunteer/dashboard')
+        return
+      }
+    }
+    toast.success('Complete your profile to continue.')
+    setStep('profile')
+  }
+
+  const handlePasswordAuth = async () => {
+    if (!isLogin && !isValidPassword(password)) {
+      toast.error('Password must be 8+ chars with an uppercase, a number, and a special character.')
+      return
+    }
+    setLoading(true)
+    try {
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+        await handleSuccessfulAuth(data.user)
+      } else {
+        const { data, error } = await supabase.auth.signUp({ email, password })
+        if (error) throw error
+        await handleSuccessfulAuth(data.user)
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Authentication failed')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSendOTP = async () => {
     setLoading(true)
@@ -32,8 +87,7 @@ export default function VolunteerAuth() {
       }
       setShowOtpField(true)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to send OTP'
-      toast.error(msg)
+      toast.error(err instanceof Error ? err.message : 'Failed to send OTP')
     } finally {
       setLoading(false)
     }
@@ -51,35 +105,10 @@ export default function VolunteerAuth() {
       }
       if (error) throw error
 
-      // Create user record with volunteer role
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await supabase.from('users').upsert({
-          id: user.id,
-          email: user.email,
-          phone: user.phone,
-          role: 'volunteer',
-          approved: false,
-        })
-        
-        // Check if profile exists
-        const { data: existingProfile } = await supabase
-          .from('volunteer_profiles')
-          .select('user_id')
-          .eq('user_id', user.id)
-          .single()
-          
-        if (existingProfile) {
-          toast.success('Signed in successfully!')
-          navigate('/volunteer/dashboard')
-          return
-        }
-      }
-      toast.success('Verified! Complete your profile.')
-      setStep('profile')
+      await handleSuccessfulAuth(user)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Invalid OTP'
-      toast.error(msg)
+      toast.error(err instanceof Error ? err.message : 'Invalid OTP')
     } finally {
       setLoading(false)
     }
@@ -104,7 +133,7 @@ export default function VolunteerAuth() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">Volunteer Portal</h1>
-              <p className="text-gray-400 text-sm">Join Bridge India as a volunteer</p>
+              <p className="text-gray-400 text-sm">{isLogin ? 'Sign in to your account' : 'Join Bridge India as a volunteer'}</p>
             </div>
           </div>
 
@@ -125,88 +154,78 @@ export default function VolunteerAuth() {
                 </button>
               </div>
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setMethod('email')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border transition-all text-sm font-medium ${method === 'email' ? 'border-primary-500 bg-primary-500/10 text-primary-400' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}
-                >
-                  <Mail className="w-4 h-4" />Email OTP
+              <div className="flex gap-2">
+                <button onClick={() => setMethod('password')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border transition-all text-xs font-medium ${method === 'password' ? 'border-primary-500 bg-primary-500/10 text-primary-400' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
+                  <KeyRound className="w-3.5 h-3.5" />Password
                 </button>
-                <button
-                  onClick={() => setMethod('phone')}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border transition-all text-sm font-medium ${method === 'phone' ? 'border-primary-500 bg-primary-500/10 text-primary-400' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}
-                >
-                  <Phone className="w-4 h-4" />Phone OTP
+                <button onClick={() => setMethod('email')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border transition-all text-xs font-medium ${method === 'email' ? 'border-primary-500 bg-primary-500/10 text-primary-400' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
+                  <Mail className="w-3.5 h-3.5" />Email OTP
+                </button>
+                <button onClick={() => setMethod('phone')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border transition-all text-xs font-medium ${method === 'phone' ? 'border-primary-500 bg-primary-500/10 text-primary-400' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
+                  <Phone className="w-3.5 h-3.5" />Phone OTP
                 </button>
               </div>
 
-              {method === 'email' ? (
-                <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Email Address</label>
-                  <input
-                    id="volunteer-email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="input-field"
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="text-sm text-gray-400 mb-2 block">Phone Number</label>
-                  <div className="flex gap-2">
-                    <span className="input-field w-16 text-center shrink-0">+91</span>
-                    <input
-                      id="volunteer-phone"
-                      type="tel"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value)}
-                      placeholder="9876543210"
-                      className="input-field flex-1"
-                    />
+              {method === 'password' && (
+                <div className="space-y-4 animate-in">
+                  <div>
+                    <label className="text-sm text-gray-400 mb-2 block">Email Address</label>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field" />
                   </div>
+                  <div>
+                    <label className="text-sm text-gray-400 mb-2 block">Password</label>
+                    <div className="relative">
+                      <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="input-field" />
+                      <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3.5 text-gray-400 hover:text-white">
+                        {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {!isLogin && (
+                      <p className="text-xs text-gray-500 mt-2">Must be 8+ chars, 1 uppercase, 1 number, 1 special char.</p>
+                    )}
+                  </div>
+                  <button onClick={handlePasswordAuth} disabled={loading || !email || !password} className="btn-primary w-full disabled:opacity-50 mt-2">
+                    {loading ? 'Authenticating...' : (isLogin ? 'Sign In' : 'Create Account')}
+                  </button>
                 </div>
               )}
 
-              {showOtpField && (
-                <div className="animate-in">
-                  <label className="text-sm text-gray-400 mb-2 block">Enter OTP</label>
-                  <input
-                    id="volunteer-otp"
-                    type="text"
-                    value={otp}
-                    onChange={e => setOtp(e.target.value)}
-                    placeholder="6-digit code"
-                    className="input-field text-center text-2xl tracking-widest"
-                    maxLength={6}
-                  />
-                </div>
-              )}
+              {(method === 'email' || method === 'phone') && (
+                <div className="space-y-4 animate-in">
+                  {method === 'email' ? (
+                    <div>
+                      <label className="text-sm text-gray-400 mb-2 block">Email Address</label>
+                      <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field" />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="text-sm text-gray-400 mb-2 block">Phone Number</label>
+                      <div className="flex gap-2">
+                        <span className="input-field w-16 text-center shrink-0">+91</span>
+                        <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="9876543210" className="input-field flex-1" />
+                      </div>
+                    </div>
+                  )}
 
-              {!showOtpField ? (
-                <button
-                  onClick={handleSendOTP}
-                  disabled={loading || (!email && !phone)}
-                  className="btn-primary w-full disabled:opacity-50"
-                >
-                  {loading ? 'Sending...' : 'Send OTP'}
-                </button>
-              ) : (
-                <div className="space-y-3">
-                  <button
-                    onClick={handleVerifyOTP}
-                    disabled={loading || otp.length < 6}
-                    className="btn-primary w-full disabled:opacity-50"
-                  >
-                    {loading ? 'Verifying...' : 'Verify & Continue'}
-                  </button>
-                  <button
-                    onClick={handleSendOTP}
-                    className="btn-outline w-full text-sm"
-                  >
-                    Resend OTP
-                  </button>
+                  {showOtpField && (
+                    <div className="animate-in">
+                      <label className="text-sm text-gray-400 mb-2 block">Enter OTP</label>
+                      <input type="text" value={otp} onChange={e => setOtp(e.target.value)} placeholder="6-digit code" className="input-field text-center text-2xl tracking-widest" maxLength={6} />
+                    </div>
+                  )}
+
+                  {!showOtpField ? (
+                    <button onClick={handleSendOTP} disabled={loading || (!email && !phone)} className="btn-primary w-full disabled:opacity-50">
+                      {loading ? 'Sending...' : 'Send OTP'}
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <button onClick={handleVerifyOTP} disabled={loading || otp.length < 6} className="btn-primary w-full disabled:opacity-50">
+                        {loading ? 'Verifying...' : 'Verify & Continue'}
+                      </button>
+                      <button onClick={handleSendOTP} className="btn-outline w-full text-sm">Resend OTP</button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -228,7 +247,6 @@ function VolunteerProfileForm({ onComplete }: { onComplete: () => void }) {
   const [availability, setAvailability] = useState('weekends')
   const [loading, setLoading] = useState(false)
   const [locationSet, setLocationSet] = useState(false)
-  const [showPass, setShowPass] = useState(false)
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -242,17 +260,16 @@ function VolunteerProfileForm({ onComplete }: { onComplete: () => void }) {
         occupation,
         skills: skills.split(',').map(s => s.trim()),
         availability,
-        location_lat: 16.5062, // Default: Vijayawada AP
+        location_lat: 16.5062,
         location_lng: 80.6480,
-        points: 20, // Profile completion bonus
+        points: 20,
         streak: 1,
         tier: 'newbie',
         last_active: new Date().toISOString(),
       })
       onComplete()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to save profile'
-      toast.error(msg)
+      toast.error(err instanceof Error ? err.message : 'Failed to save profile')
     } finally {
       setLoading(false)
     }
