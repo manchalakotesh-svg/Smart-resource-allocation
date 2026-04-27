@@ -2,24 +2,18 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import { Users, ArrowLeft, Mail, Phone, Eye, EyeOff, KeyRound } from 'lucide-react'
+import { Users, ArrowLeft, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-type Step = 'method' | 'otp' | 'profile'
 
 export default function VolunteerAuth() {
   const navigate = useNavigate()
   const { demoLogin } = useAuth()
-  const [step, setStep] = useState<Step>('method')
   const [isLogin, setIsLogin] = useState(false)
-  const [method, setMethod] = useState<'email' | 'phone' | 'password'>('password')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
-  const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showOtpField, setShowOtpField] = useState(false)
   const [showPass, setShowPass] = useState(false)
+  const [step, setStep] = useState<'auth' | 'profile'>('auth')
 
   const isValidPassword = (pwd: string) => {
     return pwd.length >= 8 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd) && /[^A-Za-z0-9]/.test(pwd)
@@ -30,7 +24,6 @@ export default function VolunteerAuth() {
       await supabase.from('users').upsert({
         id: user.id,
         email: user.email,
-        phone: user.phone,
         role: 'volunteer',
         approved: false,
       })
@@ -74,48 +67,6 @@ export default function VolunteerAuth() {
     }
   }
 
-  const handleSendOTP = async () => {
-    setLoading(true)
-    try {
-      if (method === 'email') {
-        const { error } = await supabase.auth.signInWithOtp({ email })
-        if (error) throw error
-        toast.success('OTP sent to your email!')
-      } else {
-        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`
-        const { error } = await supabase.auth.signInWithOtp({ phone: formattedPhone })
-        if (error) throw error
-        toast.success('OTP sent to your phone!')
-      }
-      setShowOtpField(true)
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to send OTP')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleVerifyOTP = async () => {
-    setLoading(true)
-    try {
-      let error
-      if (method === 'email') {
-        ({ error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' }))
-      } else {
-        const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`
-        ;({ error } = await supabase.auth.verifyOtp({ phone: formattedPhone, token: otp, type: 'sms' }))
-      }
-      if (error) throw error
-
-      const { data: { user } } = await supabase.auth.getUser()
-      await handleSuccessfulAuth(user)
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Invalid OTP')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleProfileComplete = () => {
     toast.success('Profile submitted! Awaiting admin approval.')
     navigate('/volunteer/dashboard')
@@ -139,7 +90,7 @@ export default function VolunteerAuth() {
             </div>
           </div>
 
-          {step === 'method' && (
+          {step === 'auth' ? (
             <div className="space-y-6 animate-in">
               <div className="flex p-1 bg-gray-900 rounded-xl mb-2">
                 <button
@@ -156,92 +107,32 @@ export default function VolunteerAuth() {
                 </button>
               </div>
 
-              <div className="flex gap-2">
-                <button onClick={() => setMethod('password')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border transition-all text-xs font-medium ${method === 'password' ? 'border-primary-500 bg-primary-500/10 text-primary-400' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
-                  <KeyRound className="w-3.5 h-3.5" />Password
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Email Address</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field" />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-400 mb-2 block">Password</label>
+                  <div className="relative">
+                    <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="input-field" />
+                    <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3.5 text-gray-400 hover:text-white">
+                      {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {!isLogin && (
+                    <p className="text-xs text-gray-500 mt-2">Must be 8+ chars, 1 uppercase, 1 number, 1 special char.</p>
+                  )}
+                </div>
+                <button onClick={handlePasswordAuth} disabled={loading || !email || !password} className="btn-primary w-full disabled:opacity-50 mt-2">
+                  {loading ? 'Authenticating...' : (isLogin ? 'Sign In' : 'Create Account')}
                 </button>
-                <button onClick={() => setMethod('email')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border transition-all text-xs font-medium ${method === 'email' ? 'border-primary-500 bg-primary-500/10 text-primary-400' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
-                  <Mail className="w-3.5 h-3.5" />Email OTP
-                </button>
-                <button onClick={() => setMethod('phone')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border transition-all text-xs font-medium ${method === 'phone' ? 'border-primary-500 bg-primary-500/10 text-primary-400' : 'border-gray-700 text-gray-400 hover:border-gray-600'}`}>
-                  <Phone className="w-3.5 h-3.5" />Phone OTP
+                <button onClick={() => { demoLogin('volunteer'); navigate('/volunteer/dashboard') }} className="btn-outline w-full mt-2 border-dashed border-gray-600 text-gray-400 hover:text-white">
+                  Try Demo Account (Bypass)
                 </button>
               </div>
-
-              {method === 'password' && (
-                <div className="space-y-4 animate-in">
-                  <div>
-                    <label className="text-sm text-gray-400 mb-2 block">Email Address</label>
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field" />
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-400 mb-2 block">Password</label>
-                    <div className="relative">
-                      <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="input-field" />
-                      <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3.5 text-gray-400 hover:text-white">
-                        {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                    {!isLogin && (
-                      <p className="text-xs text-gray-500 mt-2">Must be 8+ chars, 1 uppercase, 1 number, 1 special char.</p>
-                    )}
-                  </div>
-                  <button onClick={handlePasswordAuth} disabled={loading || !email || !password} className="btn-primary w-full disabled:opacity-50 mt-2">
-                    {loading ? 'Authenticating...' : (isLogin ? 'Sign In' : 'Create Account')}
-                  </button>
-                  <button onClick={() => { demoLogin('volunteer'); navigate('/volunteer/dashboard') }} className="btn-outline w-full mt-2 border-dashed border-gray-600 text-gray-400 hover:text-white">
-                    Try Demo Account (Bypass)
-                  </button>
-                </div>
-              )}
-
-              {(method === 'email' || method === 'phone') && (
-                <div className="space-y-4 animate-in">
-                  {method === 'email' ? (
-                    <div>
-                      <label className="text-sm text-gray-400 mb-2 block">Email Address</label>
-                      <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="input-field" />
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="text-sm text-gray-400 mb-2 block">Phone Number</label>
-                      <div className="flex gap-2">
-                        <span className="input-field w-16 text-center shrink-0">+91</span>
-                        <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="9876543210" className="input-field flex-1" />
-                      </div>
-                    </div>
-                  )}
-
-                  {showOtpField && (
-                    <div className="animate-in">
-                      <label className="text-sm text-gray-400 mb-2 block">Enter OTP</label>
-                      <input type="text" value={otp} onChange={e => setOtp(e.target.value)} placeholder="6-digit code" className="input-field text-center text-2xl tracking-widest" maxLength={6} />
-                    </div>
-                  )}
-
-                  {!showOtpField ? (
-                    <div className="space-y-3">
-                      <button onClick={handleSendOTP} disabled={loading || (!email && !phone)} className="btn-primary w-full disabled:opacity-50">
-                        {loading ? 'Sending...' : 'Send OTP'}
-                      </button>
-                      <button onClick={() => { demoLogin('volunteer'); navigate('/volunteer/dashboard') }} className="btn-outline w-full border-dashed border-gray-600 text-gray-400 hover:text-white">
-                        Try Demo Account (Bypass)
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <button onClick={handleVerifyOTP} disabled={loading || otp.length < 6} className="btn-primary w-full disabled:opacity-50">
-                        {loading ? 'Verifying...' : 'Verify & Continue'}
-                      </button>
-                      <button onClick={handleSendOTP} className="btn-outline w-full text-sm">Resend OTP</button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
-          )}
-
-          {step === 'profile' && (
+          ) : (
             <VolunteerProfileForm onComplete={handleProfileComplete} />
           )}
         </div>
