@@ -8,6 +8,7 @@ interface AuthContextType {
   role: UserRole | null
   loading: boolean
   signOut: () => Promise<void>
+  demoLogin: (role: UserRole) => void
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   role: null,
   loading: true,
   signOut: async () => {},
+  demoLogin: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -25,6 +27,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const demoRole = localStorage.getItem('demo_role') as UserRole
+    if (demoRole) {
+      const demoUser = { id: 'demo-id', email: `demo@${demoRole}.com` } as User
+      setUser(demoUser)
+      setRole(demoRole)
+      setSession({ user: demoUser } as Session)
+      setLoading(false)
+      return
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
@@ -36,6 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (localStorage.getItem('demo_role')) return
+
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
@@ -65,12 +79,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signOut = async () => {
+    localStorage.removeItem('demo_role')
     await supabase.auth.signOut()
+    setUser(null)
     setRole(null)
+    setSession(null)
+  }
+
+  const demoLogin = (newRole: UserRole) => {
+    const demoUser = { id: 'demo-id', email: `demo@${newRole}.com` } as User
+    localStorage.setItem('demo_role', newRole)
+    setUser(demoUser)
+    setRole(newRole)
+    setSession({ user: demoUser } as Session)
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, signOut, demoLogin }}>
       {children}
     </AuthContext.Provider>
   )

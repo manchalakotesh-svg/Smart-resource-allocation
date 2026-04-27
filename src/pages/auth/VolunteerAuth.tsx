@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { Users, ArrowLeft, Mail, Phone, Eye, EyeOff, KeyRound } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -8,6 +9,7 @@ type Step = 'method' | 'otp' | 'profile'
 
 export default function VolunteerAuth() {
   const navigate = useNavigate()
+  const { demoLogin } = useAuth()
   const [step, setStep] = useState<Step>('method')
   const [isLogin, setIsLogin] = useState(false)
   const [method, setMethod] = useState<'email' | 'phone' | 'password'>('password')
@@ -187,6 +189,9 @@ export default function VolunteerAuth() {
                   <button onClick={handlePasswordAuth} disabled={loading || !email || !password} className="btn-primary w-full disabled:opacity-50 mt-2">
                     {loading ? 'Authenticating...' : (isLogin ? 'Sign In' : 'Create Account')}
                   </button>
+                  <button onClick={() => { demoLogin('volunteer'); navigate('/volunteer/dashboard') }} className="btn-outline w-full mt-2 border-dashed border-gray-600 text-gray-400 hover:text-white">
+                    Try Demo Account (Bypass)
+                  </button>
                 </div>
               )}
 
@@ -215,9 +220,14 @@ export default function VolunteerAuth() {
                   )}
 
                   {!showOtpField ? (
-                    <button onClick={handleSendOTP} disabled={loading || (!email && !phone)} className="btn-primary w-full disabled:opacity-50">
-                      {loading ? 'Sending...' : 'Send OTP'}
-                    </button>
+                    <div className="space-y-3">
+                      <button onClick={handleSendOTP} disabled={loading || (!email && !phone)} className="btn-primary w-full disabled:opacity-50">
+                        {loading ? 'Sending...' : 'Send OTP'}
+                      </button>
+                      <button onClick={() => { demoLogin('volunteer'); navigate('/volunteer/dashboard') }} className="btn-outline w-full border-dashed border-gray-600 text-gray-400 hover:text-white">
+                        Try Demo Account (Bypass)
+                      </button>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       <button onClick={handleVerifyOTP} disabled={loading || otp.length < 6} className="btn-primary w-full disabled:opacity-50">
