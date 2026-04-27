@@ -161,6 +161,24 @@ export default function NGOAuth() {
                 </button>
               </div>
 
+              {method === 'password' ? (
+                <div className="space-y-4 animate-in">
+                  <div>
+                    <label className="text-sm text-gray-400 mb-2 block">Official NGO Email</label>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="contact@yourngo.org" className="input-field" />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400 mb-2 block">Password</label>
+                    <div className="relative">
+                      <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="input-field" />
+                      <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-3.5 text-gray-400 hover:text-white">
+                        {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {!isLogin && (
+                      <p className="text-xs text-gray-500 mt-2">Must be 8+ chars, 1 uppercase, 1 number, 1 special char.</p>
+                    )}
+                  </div>
                   <button onClick={handlePasswordAuth} disabled={loading || !email || !password} className="btn-secondary w-full disabled:opacity-50 mt-2">
                     {loading ? 'Authenticating...' : (isLogin ? 'Sign In' : 'Create Account')}
                   </button>
