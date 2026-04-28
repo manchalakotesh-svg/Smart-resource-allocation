@@ -242,8 +242,6 @@ export default function NGOAuth() {
                 <button onClick={handlePasswordAuth} disabled={loading || !email || !password} className="btn-secondary w-full disabled:opacity-50 mt-2">
                   {loading ? 'Authenticating...' : (isLogin ? 'Sign In' : 'Create Account')}
                 </button>
-                <button onClick={() => { demoLogin('ngo'); navigate('/ngo/dashboard') }} className="btn-outline w-full mt-2 border-dashed border-gray-600 text-gray-400 hover:text-white">
-                  Try Demo Account (Bypass)
                 </button>
               </div>
             </div>
