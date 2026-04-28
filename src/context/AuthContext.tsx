@@ -10,7 +10,6 @@ interface AuthContextType {
   role: UserRole | null
   loading: boolean
   signOut: () => Promise<void>
-  demoLogin: (role: UserRole) => void
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,7 +17,6 @@ const AuthContext = createContext<AuthContextType>({
   role: null,
   loading: true,
   signOut: async () => {},
-  demoLogin: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -26,22 +24,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    // Check for demo login first
-    const demoRole = localStorage.getItem('demo_role') as UserRole
-    if (demoRole) {
-      const demoUser = { uid: 'demo-id', email: `demo@${demoRole}.com` } as User
-      setUser(demoUser)
-      setRole(demoRole)
-      setLoading(false)
-      return
-    }
 
     let roleUnsubscribe: (() => void) | null = null
 
     // Firebase Auth listener
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (localStorage.getItem('demo_role')) return
 
       if (firebaseUser) {
         setUser(firebaseUser)
@@ -91,21 +78,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = async () => {
-    localStorage.removeItem('demo_role')
     await firebaseSignOut(auth)
     setUser(null)
     setRole(null)
   }
 
-  const demoLogin = (newRole: UserRole) => {
-    const demoUser = { uid: 'demo-id', email: `demo@${newRole}.com` } as User
-    localStorage.setItem('demo_role', newRole)
-    setUser(demoUser)
-    setRole(newRole)
-  }
 
   return (
-    <AuthContext.Provider value={{ user, role, loading, signOut, demoLogin }}>
+    <AuthContext.Provider value={{ user, role, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   )

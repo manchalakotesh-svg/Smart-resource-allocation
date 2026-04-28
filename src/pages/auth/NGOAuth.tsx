@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 
 export default function NGOAuth() {
   const navigate = useNavigate()
-  const { user, signOut, demoLogin } = useAuth()
+  const { user, signOut } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -181,7 +181,7 @@ export default function NGOAuth() {
 
           {step === 'auth' ? (
             <div className="space-y-6 animate-in">
-              {user && !localStorage.getItem('demo_role') && (
+              {user && (
                 <div className="bg-secondary-500/10 border border-secondary-500/30 rounded-2xl p-6 text-center space-y-4 mb-4">
                   <div className="w-12 h-12 bg-secondary-500/20 rounded-full flex items-center justify-center mx-auto">
                     <Building2 className="w-6 h-6 text-secondary-400" />
@@ -241,7 +241,6 @@ export default function NGOAuth() {
                 </div>
                 <button onClick={handlePasswordAuth} disabled={loading || !email || !password} className="btn-secondary w-full disabled:opacity-50 mt-2">
                   {loading ? 'Authenticating...' : (isLogin ? 'Sign In' : 'Create Account')}
-                </button>
                 </button>
               </div>
             </div>

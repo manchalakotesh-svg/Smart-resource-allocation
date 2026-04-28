@@ -88,7 +88,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-16">
             <button
               onClick={() => {
-                if (user && !localStorage.getItem('demo_role')) {
+                if (user) {
                   navigate(`/${role || 'volunteer'}/dashboard`)
                 } else {
                   navigate('/auth/volunteer')
@@ -109,7 +109,7 @@ export default function Home() {
 
             <button
               onClick={() => {
-                if (user && !localStorage.getItem('demo_role')) {
+                if (user) {
                   navigate(`/${role || 'ngo'}/dashboard`)
                 } else {
                   navigate('/auth/ngo')
@@ -130,7 +130,7 @@ export default function Home() {
 
             <button
               onClick={() => {
-                if (user && !localStorage.getItem('demo_role')) {
+                if (user) {
                   navigate(`/${role || 'admin'}/dashboard`)
                 } else {
                   navigate('/auth/admin')

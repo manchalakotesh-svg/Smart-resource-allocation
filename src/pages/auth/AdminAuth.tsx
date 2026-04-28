@@ -5,13 +5,6 @@ import toast from 'react-hot-toast'
 
 export default function AdminAuth() {
   const navigate = useNavigate()
-  const { demoLogin } = useAuth()
-
-  const handlePrototypeAccess = () => {
-    demoLogin('admin')
-    toast.success('Prototype Access Granted')
-    navigate('/admin/dashboard')
-  }
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-16">

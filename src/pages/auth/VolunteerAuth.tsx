@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 
 export default function VolunteerAuth() {
   const navigate = useNavigate()
-  const { user, signOut, demoLogin } = useAuth()
+  const { user, signOut } = useAuth()
   const [isLogin, setIsLogin] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -18,7 +18,7 @@ export default function VolunteerAuth() {
   const [showPass, setShowPass] = useState(false)
   const [step, setStep] = useState<'auth' | 'profile'>('auth')
 
-  if (user && !localStorage.getItem('demo_role')) {
+  if (user) {
     // If user is already logged in but hasn't completed profile, we'll see that in step
   }
 
@@ -112,7 +112,7 @@ export default function VolunteerAuth() {
 
           {step === 'auth' ? (
             <div className="space-y-6 animate-in">
-              {user && !localStorage.getItem('demo_role') && (
+              {user && (
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6 text-center space-y-4 mb-4">
                   <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto">
                     <Users className="w-6 h-6 text-amber-400" />
@@ -172,7 +172,6 @@ export default function VolunteerAuth() {
                 </div>
                 <button onClick={handlePasswordAuth} disabled={loading || !email || !password} className="btn-primary w-full disabled:opacity-50 mt-2">
                   {loading ? 'Authenticating...' : (isLogin ? 'Sign In' : 'Create Account')}
-                </button>
                 </button>
               </div>
             </div>
