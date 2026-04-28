@@ -5,11 +5,28 @@ import { Users, Building2, Clock, Activity, ArrowRight, ShieldCheck, Brain, Sear
 import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
 import { collection, query, getDocs, where } from 'firebase/firestore'
+import { getAIPlatformHealthReport } from '../../lib/ai'
 
 export default function AdminDashboard() {
   const [examining, setExamining] = useState(false)
   const [showExam, setShowExam] = useState(false)
   const [examResults, setExamResults] = useState<any[]>([])
+  const [healthReport, setHealthReport] = useState('')
+  const [healthLoading, setHealthLoading] = useState(false)
+
+  useState(() => {
+    fetchHealthReport()
+  })
+
+  const fetchHealthReport = async () => {
+    setHealthLoading(true)
+    try {
+      const report = await getAIPlatformHealthReport()
+      setHealthReport(report)
+    } finally {
+      setHealthLoading(false)
+    }
+  }
 
   const handleAIExamination = async () => {
     setExamining(true)
@@ -70,6 +87,32 @@ export default function AdminDashboard() {
               <Brain className="w-5 h-5" />
               {examining ? 'Examining...' : 'AI Examination'}
             </button>
+          </div>
+
+          {/* AI Platform Health Section */}
+          <div className="card p-6 border-primary-500/20 bg-primary-500/5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5">
+              <ShieldCheck className="w-24 h-24 text-primary-400" />
+            </div>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-primary-500/20 rounded-2xl flex items-center justify-center">
+                <Brain className="w-6 h-6 text-primary-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">AI Platform Health Report</h2>
+                <p className="text-[10px] text-primary-400 uppercase tracking-widest font-bold">Automated Executive Summary</p>
+              </div>
+            </div>
+            {healthLoading ? (
+              <div className="space-y-2 animate-pulse">
+                <div className="h-4 bg-gray-800 rounded w-full"></div>
+                <div className="h-4 bg-gray-800 rounded w-5/6"></div>
+              </div>
+            ) : (
+              <p className="text-gray-300 text-sm leading-relaxed italic border-l-2 border-primary-500/30 pl-4">
+                "{healthReport || 'Analyzing platform statistics...'}"
+              </p>
+            )}
           </div>
 
           {/* Quick Stats */}

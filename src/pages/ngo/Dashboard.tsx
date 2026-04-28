@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { Users, MessageSquare, Plus, Zap, Clock, Brain, MapPin, Search } from 'lucide-react'
-import { chatbotQuery } from '../../lib/ai'
+import { chatbotQuery, generateNGOImpactSummary } from '../../lib/ai'
 import { db } from '../../lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
@@ -29,6 +29,8 @@ export default function NGODashboard() {
   const [chatLoading, setChatLoading] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [profile, setProfile] = useState<any>(null)
+  const [impactSummary, setImpactSummary] = useState('')
+  const [summaryLoading, setSummaryLoading] = useState(false)
   
   // AI Match States
   const [showMatch, setShowMatch] = useState(false)
@@ -37,8 +39,22 @@ export default function NGODashboard() {
   const [matching, setMatching] = useState(false)
 
   useEffect(() => {
-    if (user) fetchProfile()
+    if (user) {
+      fetchProfile()
+      fetchSummary()
+    }
   }, [user])
+
+  const fetchSummary = async () => {
+    if (!user) return
+    setSummaryLoading(true)
+    try {
+      const summary = await generateNGOImpactSummary(user.uid)
+      setImpactSummary(summary)
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
 
   const fetchProfile = async () => {
     if (!user) return
@@ -119,6 +135,33 @@ export default function NGODashboard() {
                 <MessageSquare className="w-4 h-4" />AI Assistant
               </button>
             </div>
+          </div>
+
+          {/* AI Impact Summary Section */}
+          <div className="card p-6 border-secondary-500/20 bg-secondary-500/5 overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+              <Zap className="w-24 h-24 text-secondary-400" />
+            </div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-secondary-500/20 rounded-xl flex items-center justify-center">
+                <Brain className="w-5 h-5 text-secondary-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">AI Impact Summary</h2>
+                <p className="text-[10px] text-secondary-400 uppercase tracking-widest font-bold">Auto-Generated Analysis</p>
+              </div>
+            </div>
+            {summaryLoading ? (
+              <div className="space-y-2 animate-pulse">
+                <div className="h-4 bg-gray-800 rounded w-full"></div>
+                <div className="h-4 bg-gray-800 rounded w-5/6"></div>
+                <div className="h-4 bg-gray-800 rounded w-4/6"></div>
+              </div>
+            ) : (
+              <p className="text-gray-300 text-sm leading-relaxed italic">
+                "{impactSummary || 'Complete your profile to generate an AI impact summary.'}"
+              </p>
+            )}
           </div>
 
           {/* Stats */}

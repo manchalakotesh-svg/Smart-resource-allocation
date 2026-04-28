@@ -6,12 +6,7 @@ import { ref, uploadBytes } from 'firebase/storage'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
 import GamificationBar from '../../components/GamificationBar'
-import { generateAIStory, getAIMatchScore } from '../../lib/ai'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { FileText, Eye, Brain, Bell, Video, Calendar, MapPin, CheckCircle2, Clock, MessageSquare, Send } from 'lucide-react'
-import toast from 'react-hot-toast'
-import jsPDF from 'jspdf'
-import { chatbotQuery } from '../../lib/ai'
+import { chatbotQuery, generateAIStory, getAIMatchScore, getAISkillRecommendations } from '../../lib/ai'
 
 // Demo data
 const activityData = [
@@ -29,6 +24,7 @@ export default function VolunteerDashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [profile, setProfile] = useState<any>(null)
+  const [skillRecs, setSkillRecs] = useState<string[]>([])
   const [story, setStory] = useState('')
   const [storyLoading, setStoryLoading] = useState(false)
   const [matchScore, setMatchScore] = useState<number | null>(null)
@@ -51,6 +47,8 @@ export default function VolunteerDashboard() {
       const userDoc = await getDoc(doc(db, 'volunteer_profiles', user.uid))
       if (userDoc.exists()) {
         setProfile(userDoc.data())
+        const recs = await getAISkillRecommendations(user.uid)
+        setSkillRecs(recs)
       } else {
         // If profile doesn't exist, redirect to complete it
         toast.error('Please complete your profile first.')
@@ -184,6 +182,36 @@ export default function VolunteerDashboard() {
             tier={profile?.tier ?? 'reliable'}
             badges={3}
           />
+
+          {/* AI Skill Path Section */}
+          <div className="card p-6 border-primary-500/20 bg-primary-500/5 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Brain className="w-32 h-32 text-primary-400" />
+            </div>
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary-500/20 rounded-2xl flex items-center justify-center">
+                  <Brain className="w-6 h-6 text-primary-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">AI Skill Path</h2>
+                  <p className="text-xs text-primary-400 font-bold uppercase tracking-widest">Personalized Recommendations</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {skillRecs.length > 0 ? (
+                  skillRecs.map(skill => (
+                    <div key={skill} className="px-4 py-2 bg-gray-900 border border-gray-800 rounded-xl flex items-center gap-2 group/skill hover:border-primary-500/50 transition-all cursor-default">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                      <span className="text-sm font-medium text-gray-300">{skill}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-500 text-sm italic">Analyzing platform needs...</div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
