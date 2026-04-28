@@ -47,8 +47,8 @@ export default function VolunteerDashboard() {
       const userDoc = await getDoc(doc(db, 'volunteer_profiles', user.uid))
       if (userDoc.exists()) {
         setProfile(userDoc.data())
-        const recs = await getAISkillRecommendations(user.uid)
-        setSkillRecs(recs)
+        // Start AI fetch but don't AWAIT it here - let it load in background
+        getAISkillRecommendations(user.uid).then(recs => setSkillRecs(recs))
       } else {
         // If profile doesn't exist, redirect to complete it
         toast.error('Please complete your profile first.')

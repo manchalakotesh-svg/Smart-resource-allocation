@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return prev;
       });
-    }, 5000);
+    }, 2000);
 
     return () => {
       unsubscribe()

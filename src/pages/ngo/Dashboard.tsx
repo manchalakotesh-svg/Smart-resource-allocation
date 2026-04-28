@@ -41,6 +41,7 @@ export default function NGODashboard() {
   useEffect(() => {
     if (user) {
       fetchProfile()
+      // Run AI summary in background, don't wait for it
       fetchSummary()
     }
   }, [user])
