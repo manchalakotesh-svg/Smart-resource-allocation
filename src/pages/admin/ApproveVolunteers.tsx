@@ -1,13 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from '../../components/Sidebar'
 import { CheckCircle2, XCircle, Eye, Search, MapPin, Phone, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
-import { doc, updateDoc } from 'firebase/firestore'
-
-
-
-
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore'
 
 export default function ApproveVolunteers() {
@@ -17,9 +12,9 @@ export default function ApproveVolunteers() {
   const [processing, setProcessing] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useState(() => {
+  useEffect(() => {
     fetchPendingUsers()
-  })
+  }, [])
 
   const fetchPendingUsers = async () => {
     setLoading(true)
