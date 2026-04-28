@@ -5,18 +5,36 @@ import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
 import { doc, updateDoc } from 'firebase/firestore'
 
-const PENDING_USERS = [
-  { id: 'v1', name: 'Arjun Sharma', email: 'arjun@email.com', phone: '+91 9876543210', role: 'volunteer', occupation: 'Doctor', location: 'Guntur', proofUrl: 'proof.pdf', submittedAt: '2026-04-26' },
-  { id: 'v2', name: 'Kavitha Rao', email: 'kavitha@email.com', phone: '+91 9123456789', role: 'volunteer', occupation: 'Teacher', location: 'Nellore', proofUrl: 'id_card.jpg', submittedAt: '2026-04-25' },
-  { id: 'n1', name: 'Prajas Foundation', email: 'contact@prajas.org', phone: '+91 9988776655', role: 'ngo', occupation: 'NGO', location: 'Kurnool', proofUrl: 'reg_cert.pdf', submittedAt: '2026-04-24' },
-  { id: 'v3', name: 'Srinivas Reddy', email: 'srinivas@email.com', phone: '+91 9871234560', role: 'volunteer', occupation: 'Engineer', location: 'Visakhapatnam', proofUrl: 'employee_id.jpg', submittedAt: '2026-04-23' },
-]
+
+
+
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore'
 
 export default function ApproveVolunteers() {
-  const [users, setUsers] = useState(PENDING_USERS)
+  const [users, setUsers] = useState<any[]>([])
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | 'volunteer' | 'ngo'>('all')
   const [processing, setProcessing] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useState(() => {
+    fetchPendingUsers()
+  })
+
+  const fetchPendingUsers = async () => {
+    setLoading(true)
+    try {
+      // In a real app, we'd fetch from 'public_profiles' or 'users' where approved is false
+      const q = query(collection(db, 'users'), where('approved', '==', false))
+      const snapshot = await getDocs(q)
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+      setUsers(data)
+    } catch (error) {
+      console.error('Error fetching pending users:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleAction = async (id: string, name: string, approve: boolean) => {
     setProcessing(id)
@@ -30,9 +48,7 @@ export default function ApproveVolunteers() {
       toast.success(`${name} ${approve ? 'approved ✓' : 'rejected ✗'}`)
     } catch (error) {
       console.error('Error updating user approval:', error)
-      // Fallback for demo IDs like 'v1'
-      setUsers(prev => prev.filter(u => u.id !== id))
-      toast.success(`${name} ${approve ? 'approved ✓' : 'rejected ✗'} (demo)`)
+      toast.error('Failed to update approval status.')
     } finally {
       setProcessing(null)
     }

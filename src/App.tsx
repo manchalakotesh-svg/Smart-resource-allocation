@@ -105,7 +105,7 @@ function AppRoutes() {
       } />
       {/* Shared routes */}
       <Route path="/community/profiles" element={
-        <ProtectedRoute allowedRole={localStorage.getItem('demo_role') || 'volunteer'}><PublicProfiles /></ProtectedRoute>
+        <ProtectedRoute allowedRole="volunteer"><PublicProfiles /></ProtectedRoute>
       } />
 
       <Route path="*" element={<Navigate to="/" replace />} />

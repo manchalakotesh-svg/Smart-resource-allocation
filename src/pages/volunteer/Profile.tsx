@@ -44,9 +44,7 @@ export default function VolunteerProfile() {
         setOccupation(data.occupation || '')
         setJobExp(data.job_exp || '')
       } else {
-        // Demo fallback
-        setProfile({ name: 'Demo Volunteer', points: 340, streak: 7, tier: 'reliable' })
-        setSkills(['Teaching', 'First Aid'])
+        toast.error('Profile not found. Please complete your registration.')
       }
     } catch (error) {
       console.error('Error fetching profile:', error)

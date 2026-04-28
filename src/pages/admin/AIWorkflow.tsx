@@ -26,33 +26,8 @@ export default function AIWorkflow() {
     setMessages(prev => [...prev, { role: 'user', content: userMsg }])
     setLoading(true)
 
-    // Demo responses for Admin workflow
-    const lowerInput = userMsg.toLowerCase()
-    let demoResponse = ''
-
-    if (lowerInput.includes('login') || lowerInput.includes('examine new')) {
-      demoResponse = `[AI EXAMINATION REPORT] 
-Scanned 14 new logins today. 
-- 12 Verified: Standard patterns from AP districts. 
-- 2 Flagged: Unusual IP frequency detected for users 'v_arjun' and 'ngo_test'. 
-Recommendation: Manual verification of identity proof recommended for these 2.`
-    } else if (lowerInput.includes('ngo') || lowerInput.includes('analyze ngo')) {
-      demoResponse = `[NGO IMPACT AUDIT] 
-Examined 4 new NGO registration requests.
-- 'Prerna Foundation': 95% legitimacy score. Documentation verified.
-- 'HealthPlus': 88% legitimacy score. Bio matches mission.
-- 'Save Earth': FLAG - Duplicate registration suspected with existing NGO 'Green AP'.
-Recommendation: Approve Prerna and HealthPlus; Suspend Save Earth.`
-    } else if (lowerInput.includes('summary') || lowerInput.includes('platform health')) {
-      demoResponse = `[PLATFORM HEALTH SUMMARY]
-- Active Users: 2,441 (+12% this week)
-- Pending Approvals: 23 (AI recommends 18 for approval)
-- Trending Sector: Education (5 new postings today)
-- System Status: All Firestore and Storage modules healthy.`
-    }
-
     try {
-      const response = demoResponse || await chatbotQuery(`[ADMIN WORKFLOW MODE] ${userMsg}`, user?.uid || 'admin')
+      const response = await chatbotQuery(`[ADMIN WORKFLOW MODE] ${userMsg}`, user?.uid || 'admin')
       setMessages(prev => [...prev, { role: 'ai', content: response }])
     } catch {
       toast.error('AI Workflow assistant is currently offline')
