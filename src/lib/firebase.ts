@@ -12,6 +12,11 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Debug check for Vercel deployment
+if (!firebaseConfig.apiKey) {
+  console.error("Firebase API Key is missing! Please add VITE_FIREBASE_API_KEY to your Vercel Environment Variables.");
+}
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 

@@ -70,8 +70,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
+    // Safety timeout to prevent infinite loading if Firebase/Supabase keys are missing
+    const timeout = setTimeout(() => {
+      setLoading((prev) => {
+        if (prev) {
+          console.warn("Auth initialization timed out. Check your environment variables.");
+          return false;
+        }
+        return prev;
+      });
+    }, 5000);
+
     return () => {
       unsubscribe()
+      clearTimeout(timeout)
       if (roleUnsubscribe) {
         roleUnsubscribe()
       }
