@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Users, Building2, ShieldCheck, MapPin, Star, Zap, Brain, Award, ArrowRight, Heart, Globe, TrendingUp } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import FirebaseDemo from '../components/FirebaseDemo'
 import toast from 'react-hot-toast'
 
 const stats = [
@@ -250,10 +249,6 @@ export default function Home() {
       </section>
 
 
-      {/* Firebase Demo */}
-      <section className="py-24 px-6 max-w-4xl mx-auto">
-        <FirebaseDemo />
-      </section>
 
       {/* Footer */}
       <footer className="border-t border-gray-800 py-12 px-6">

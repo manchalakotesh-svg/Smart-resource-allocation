@@ -40,12 +40,9 @@ export default function AdminAuth() {
               </p>
             </div>
 
-            <button 
-              onClick={handlePrototypeAccess}
-              className="w-full py-4 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-2xl transition-all flex items-center justify-center gap-3 border border-gray-700 hover:border-gray-600 shadow-lg group"
-            >
-              Enter Admin Dashboard <ExternalLink className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+            <p className="text-gray-500 text-sm mt-4 italic font-medium">
+              "Administrative access is restricted to authorized devices."
+            </p>
 
             <p className="text-gray-600 text-xs">
               Authorized personnel only. All actions are logged.
