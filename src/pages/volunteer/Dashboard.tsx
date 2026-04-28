@@ -7,6 +7,10 @@ import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
 import GamificationBar from '../../components/GamificationBar'
 import { chatbotQuery, generateAIStory, getAIMatchScore, getAISkillRecommendations } from '../../lib/ai'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { FileText, Eye, Brain, Bell, Video, Calendar, MapPin, CheckCircle2, Clock, MessageSquare, Send } from 'lucide-react'
+import toast from 'react-hot-toast'
+import jsPDF from 'jspdf'
 
 // Demo data
 const activityData = [

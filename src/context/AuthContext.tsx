@@ -25,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
 
+  useEffect(() => {
     let roleUnsubscribe: (() => void) | null = null
 
     // Firebase Auth listener
