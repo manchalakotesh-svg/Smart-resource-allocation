@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { db, storage } from '../../lib/firebase'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { ref, uploadBytes } from 'firebase/storage'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
 import GamificationBar from '../../components/GamificationBar'
 import { generateAIStory, getAIMatchScore } from '../../lib/ai'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { FileText, Eye, Brain, Bell, Video, Calendar, MapPin, CheckCircle2, Clock } from 'lucide-react'
+import { FileText, Eye, Brain, Bell, Video, Calendar, MapPin, CheckCircle2, Clock, MessageSquare, Send } from 'lucide-react'
 import toast from 'react-hot-toast'
 import jsPDF from 'jspdf'
+import { chatbotQuery } from '../../lib/ai'
 
 // Demo data
 const activityData = [
@@ -31,31 +34,39 @@ export default function VolunteerDashboard() {
   const [matchScore, setMatchScore] = useState<number | null>(null)
   const [notification, setNotification] = useState<string | null>('📍 New opportunity 0.8km away: Health Camp in Vijayawada')
   const [activeTab, setActiveTab] = useState<'activities' | 'story' | 'shadow'>('activities')
+  const [uploadingVideo, setUploadingVideo] = useState(false)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const [chatMsg, setChatMsg] = useState('')
+  const [chatReply, setChatReply] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const [showChat, setShowChat] = useState(false)
 
   useEffect(() => {
     if (user) fetchProfile()
   }, [user])
 
   const fetchProfile = async () => {
-    const { data } = await supabase
-      .from('volunteer_profiles')
-      .select('*')
-      .eq('user_id', user!.id)
-      .single()
-    setProfile(data || {
-      name: 'Demo Volunteer',
-      points: 340,
-      streak: 7,
-      tier: 'reliable',
-      skills: ['Teaching', 'First Aid'],
-    })
+    if (!user) return
+    try {
+      const userDoc = await getDoc(doc(db, 'volunteer_profiles', user.uid))
+      if (userDoc.exists()) {
+        setProfile(userDoc.data())
+      } else {
+        // If profile doesn't exist, redirect to complete it
+        toast.error('Please complete your profile first.')
+        navigate('/auth/volunteer')
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    }
   }
 
   const handleGenerateStory = async () => {
+    if (!user) return
     setStoryLoading(true)
     setActiveTab('story')
     try {
-      const s = await generateAIStory(user!.id)
+      const s = await generateAIStory(user.uid)
       setStory(s)
     } catch {
       toast.error('Story generation failed')
@@ -85,8 +96,50 @@ export default function VolunteerDashboard() {
   }
 
   const handleGetMatchScore = async () => {
-    const score = await getAIMatchScore(user!.id, 'demo-opp')
+    if (!user) return
+    const score = await getAIMatchScore(user.uid, 'demo-opp')
     setMatchScore(score)
+  }
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user) return
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('Video must be under 50MB')
+      return
+    }
+
+    setUploadingVideo(true)
+    const toastId = toast.loading('Uploading story video...')
+
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.uid}-${Date.now()}.${fileExt}`
+      const storageRef = ref(storage, `stories/${fileName}`)
+
+      await uploadBytes(storageRef, file)
+
+      toast.success('Story video uploaded! Earn +15 points after verification.', { id: toastId })
+    } catch (error: any) {
+      toast.error(`Upload failed: ${error.message}`, { id: toastId })
+    } finally {
+      setUploadingVideo(false)
+      if (videoInputRef.current) videoInputRef.current.value = ''
+    }
+  }
+
+  const handleChat = async () => {
+    if (!chatMsg.trim()) return
+    setChatLoading(true)
+    try {
+      const reply = await chatbotQuery(chatMsg, user?.uid || 'volunteer-demo')
+      setChatReply(reply)
+    } catch {
+      setChatReply('I am having trouble connecting. Please try again.')
+    } finally {
+      setChatLoading(false)
+    }
   }
 
   return (
@@ -101,6 +154,12 @@ export default function VolunteerDashboard() {
               <p className="text-gray-400 text-sm mt-1">Your volunteer dashboard • Andhra Pradesh</p>
             </div>
             <div className="flex gap-3">
+              <button
+                onClick={() => setShowChat(!showChat)}
+                className="btn-secondary text-sm py-2 px-4 flex items-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4" />AI Assistant
+              </button>
               <button onClick={handleDownloadCert} id="download-cert" className="btn-outline text-sm py-2 px-4 flex items-center gap-2">
                 <FileText className="w-4 h-4" />PDF Certificate
               </button>
@@ -142,6 +201,80 @@ export default function VolunteerDashboard() {
             ))}
           </div>
 
+          {/* Dedicated AI Assistant & Doubts Section */}
+          <div className="card p-8 border-primary-500/20 bg-primary-500/5 animate-in">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-primary-500 rounded-2xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+                <Brain className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Ask AI Doubts</h2>
+                <p className="text-gray-400 text-xs">Clear your personal doubts about volunteering or the platform</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={chatMsg}
+                  onChange={e => setChatMsg(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleChat()}
+                  placeholder="e.g. How do I earn the 'Reliable' badge? or How can I contact an NGO?"
+                  className="input-field py-4 flex-1 text-base shadow-inner"
+                />
+                <button 
+                  onClick={handleChat} 
+                  disabled={chatLoading}
+                  className="btn-primary px-8 flex items-center gap-2 text-base font-bold shadow-xl shadow-primary-500/20 disabled:opacity-50"
+                >
+                  {chatLoading ? 'Analyzing...' : <Send className="w-5 h-5" />}
+                  Ask AI
+                </button>
+              </div>
+              {chatReply && (
+                <div className="p-6 bg-gray-950 rounded-3xl border border-gray-800 text-gray-300 leading-relaxed shadow-2xl animate-in">
+                  <div className="text-primary-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3">Bridge AI Response</div>
+                  {chatReply}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* AI Assistant Chat Section */}
+          {showChat && (
+            <div className="card p-6 border-secondary-500/30 animate-in">
+              <h2 className="font-semibold text-white mb-4 flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-secondary-400" /> Volunteer AI Assistant
+              </h2>
+              <div className="space-y-4">
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={chatMsg}
+                    onChange={e => setChatMsg(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleChat()}
+                    placeholder="Ask about your hours, badges, or how to join an NGO..."
+                    className="input-field flex-1"
+                  />
+                  <button 
+                    onClick={handleChat} 
+                    disabled={chatLoading}
+                    className="btn-secondary px-6 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {chatLoading ? '...' : <Send className="w-4 h-4" />}
+                    Send
+                  </button>
+                </div>
+                {chatReply && (
+                  <div className="p-4 bg-gray-900 rounded-2xl border border-gray-800 text-sm text-gray-300 animate-in">
+                    <div className="text-secondary-400 text-[10px] font-bold uppercase tracking-widest mb-2">Gemini AI Assistant</div>
+                    {chatReply}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Main Grid */}
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Activity Chart */}
@@ -175,8 +308,24 @@ export default function VolunteerDashboard() {
                 >
                   <Eye className="w-4 h-4" />Shadow Volunteering
                 </button>
-                <button className="w-full flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 hover:bg-amber-500/20 transition-colors text-sm">
-                  <Video className="w-4 h-4" />Upload 30s Story Video
+                <input
+                  type="file"
+                  ref={videoInputRef}
+                  onChange={handleVideoUpload}
+                  accept="video/*"
+                  className="hidden"
+                />
+                <button 
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={uploadingVideo}
+                  className="w-full flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 hover:bg-amber-500/20 transition-colors text-sm disabled:opacity-50"
+                >
+                  {uploadingVideo ? (
+                    <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Video className="w-4 h-4" />
+                  )}
+                  {uploadingVideo ? 'Uploading...' : 'Upload 30s Story Video'}
                 </button>
               </div>
             </div>

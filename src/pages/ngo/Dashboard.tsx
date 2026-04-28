@@ -1,11 +1,14 @@
-import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from 'recharts'
-import { Users, MessageSquare, Plus, CheckCircle2, Clock, Zap } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { Users, MessageSquare, Plus, Zap, Clock, Brain, MapPin, Search } from 'lucide-react'
 import { chatbotQuery } from '../../lib/ai'
+import { db } from '../../lib/firebase'
+import { doc, getDoc } from 'firebase/firestore'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { collection, query, getDocs, where } from 'firebase/firestore'
 
 const applicantData = [
   { week: 'W1', applied: 4 }, { week: 'W2', applied: 8 }, { week: 'W3', applied: 6 },
@@ -20,21 +23,74 @@ const recentApplicants = [
 
 export default function NGODashboard() {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [chatMsg, setChatMsg] = useState('')
   const [chatReply, setChatReply] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
   const [showChat, setShowChat] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
+  
+  // AI Match States
+  const [showMatch, setShowMatch] = useState(false)
+  const [matchInputs, setMatchInputs] = useState({ occupation: '', skill: '', timing: 'weekends', place: '' })
+  const [matchedVolunteers, setMatchedVolunteers] = useState<any[]>([])
+  const [matching, setMatching] = useState(false)
+
+  useEffect(() => {
+    if (user) fetchProfile()
+  }, [user])
+
+  const fetchProfile = async () => {
+    if (!user) return
+    try {
+      const userDoc = await getDoc(doc(db, 'ngo_profiles', user.uid))
+      if (userDoc.exists()) {
+        setProfile(userDoc.data())
+      } else {
+        toast.error('Please complete your NGO profile first.')
+        navigate('/auth/ngo')
+      }
+    } catch (error) {
+      console.error('Error fetching NGO profile:', error)
+    }
+  }
 
   const handleChat = async () => {
     if (!chatMsg.trim()) return
     setChatLoading(true)
     try {
-      const reply = await chatbotQuery(chatMsg, user?.id || 'demo')
+      // Using uid instead of id for Firebase
+      const reply = await chatbotQuery(chatMsg, user?.uid || 'demo')
       setChatReply(reply)
     } catch {
       setChatReply('Sorry, I could not process your query. Please try again.')
     } finally {
       setChatLoading(false)
+    }
+  }
+
+  const handleAIMatch = async () => {
+    setMatching(true)
+    const toastId = toast.loading('AI is scanning community profiles...')
+    try {
+      // Simulate/Fetch matching from public_profiles
+      const q = query(collection(db, 'public_profiles'))
+      const snapshot = await getDocs(q)
+      const all = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+      
+      // Filter logic (Simplified for prototype)
+      const results = all.filter((v: any) => {
+        const occMatch = !matchInputs.occupation || v.occupation?.toLowerCase().includes(matchInputs.occupation.toLowerCase())
+        const skillMatch = !matchInputs.skill || v.skills?.some((s: string) => s.toLowerCase().includes(matchInputs.skill.toLowerCase()))
+        return occMatch && skillMatch
+      }).slice(0, 5)
+
+      setMatchedVolunteers(results)
+      toast.success(`Found ${results.length} matching volunteers!`, { id: toastId })
+    } catch {
+      toast.error('AI Match failed', { id: toastId })
+    } finally {
+      setMatching(false)
     }
   }
 
@@ -48,13 +104,21 @@ export default function NGODashboard() {
               <h1 className="text-2xl font-bold text-white">NGO Dashboard</h1>
               <p className="text-gray-400 text-sm mt-1">Manage volunteers and opportunities</p>
             </div>
-            <button
-              onClick={() => setShowChat(!showChat)}
-              id="btn-chatbot"
-              className="btn-secondary text-sm py-2 px-4 flex items-center gap-2"
-            >
-              <MessageSquare className="w-4 h-4" />AI Assistant
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowMatch(!showMatch)}
+                className="btn-primary text-sm py-2 px-4 flex items-center gap-2"
+              >
+                <Brain className="w-4 h-4" />AI Match Volunteers
+              </button>
+              <button
+                onClick={() => setShowChat(!showChat)}
+                id="btn-chatbot"
+                className="btn-secondary text-sm py-2 px-4 flex items-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4" />AI Assistant
+              </button>
+            </div>
           </div>
 
           {/* Stats */}
@@ -72,6 +136,99 @@ export default function NGODashboard() {
               </div>
             ))}
           </div>
+
+          {/* AI Match Feature */}
+          {showMatch && (
+            <div className="card p-6 border-primary-500/30 animate-in">
+              <div className="flex items-center gap-2 mb-6">
+                <Brain className="w-6 h-6 text-primary-400" />
+                <h2 className="text-xl font-bold text-white">AI Volunteer Matcher</h2>
+              </div>
+              
+              <div className="grid md:grid-cols-4 gap-4 mb-6">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block uppercase font-bold tracking-wider">Required Occupation</label>
+                  <input 
+                    type="text" 
+                    value={matchInputs.occupation} 
+                    onChange={e => setMatchInputs({...matchInputs, occupation: e.target.value})} 
+                    placeholder="e.g. Teacher, Doctor" 
+                    className="input-field" 
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block uppercase font-bold tracking-wider">Target Skill</label>
+                  <input 
+                    type="text" 
+                    value={matchInputs.skill} 
+                    onChange={e => setMatchInputs({...matchInputs, skill: e.target.value})} 
+                    placeholder="e.g. Math, First Aid" 
+                    className="input-field" 
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block uppercase font-bold tracking-wider">Timing</label>
+                  <select 
+                    value={matchInputs.timing} 
+                    onChange={e => setMatchInputs({...matchInputs, timing: e.target.value})} 
+                    className="input-field"
+                  >
+                    <option value="weekends">Weekends</option>
+                    <option value="weekdays">Weekdays</option>
+                    <option value="flexible">Flexible</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block uppercase font-bold tracking-wider">Location / Place</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-500" />
+                    <input 
+                      type="text" 
+                      value={matchInputs.place} 
+                      onChange={e => setMatchInputs({...matchInputs, place: e.target.value})} 
+                      placeholder="e.g. Vijayawada" 
+                      className="input-field pl-10" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={handleAIMatch} 
+                disabled={matching}
+                className="btn-primary w-full py-4 flex items-center justify-center gap-3 text-lg"
+              >
+                {matching ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Search className="w-5 h-5" />
+                )}
+                {matching ? 'AI is Matching...' : 'Find Best Volunteers'}
+              </button>
+
+              {matchedVolunteers.length > 0 && (
+                <div className="mt-8 space-y-4 animate-in">
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest border-b border-gray-800 pb-2">AI Recommended Candidates</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {matchedVolunteers.map((v: any) => (
+                      <div key={v.id} className="p-4 bg-gray-900 rounded-2xl border border-gray-800 hover:border-primary-500/30 transition-all flex items-center justify-between">
+                        <div>
+                          <p className="text-white font-bold">{v.name}</p>
+                          <p className="text-xs text-gray-500">{v.occupation} • {v.points} pts</p>
+                          <div className="flex gap-1 mt-1">
+                            {v.skills?.slice(0, 2).map((s: string) => (
+                              <span key={s} className="text-[10px] px-1.5 py-0.5 bg-gray-800 text-gray-400 rounded-md uppercase">{s}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <button className="text-xs bg-primary-500/20 text-primary-400 px-3 py-1.5 rounded-lg font-bold hover:bg-primary-500/30">Connect</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Chatbot */}
           {showChat && (

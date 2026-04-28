@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
+import { db } from '../../lib/firebase'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
 import GamificationBar from '../../components/GamificationBar'
 import { BADGES_CATALOG } from '../../lib/gamification'
-import { Save, Plus, X, Award } from 'lucide-react'
+import { Save, Award } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const SKILL_OPTIONS = [
@@ -28,31 +29,43 @@ export default function VolunteerProfile() {
   }, [user])
 
   const fetchProfile = async () => {
+    if (!user) return
     setLoading(true)
-    const { data } = await supabase.from('volunteer_profiles').select('*').eq('user_id', user!.id).single()
-    if (data) {
-      setProfile(data)
-      setSkills(data.skills || [])
-      setAvailability(data.availability || 'weekends')
-      setName(data.name || '')
-      setOccupation(data.occupation || '')
-      setJobExp(data.job_exp || '')
-    } else {
-      // Demo fallback
-      setProfile({ name: 'Demo Volunteer', points: 340, streak: 7, tier: 'reliable' })
-      setSkills(['Teaching', 'First Aid'])
+    try {
+      const docRef = doc(db, 'volunteer_profiles', user.uid)
+      const docSnap = await getDoc(docRef)
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data()
+        setProfile(data)
+        setSkills(data.skills || [])
+        setAvailability(data.availability || 'weekends')
+        setName(data.name || '')
+        setOccupation(data.occupation || '')
+        setJobExp(data.job_exp || '')
+      } else {
+        // Demo fallback
+        setProfile({ name: 'Demo Volunteer', points: 340, streak: 7, tier: 'reliable' })
+        setSkills(['Teaching', 'First Aid'])
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const handleSave = async () => {
+    if (!user) return
     setSaving(true)
     try {
-      await supabase.from('volunteer_profiles').update({
+      const docRef = doc(db, 'volunteer_profiles', user.uid)
+      await updateDoc(docRef, {
         name, occupation, skills, availability, job_exp: jobExp,
-      }).eq('user_id', user!.id)
+      })
       toast.success('Profile updated! +5 pts')
-    } catch {
+    } catch (error) {
+      console.error('Error updating profile:', error)
       toast.error('Failed to save profile')
     } finally {
       setSaving(false)

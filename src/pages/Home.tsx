@@ -1,6 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Users, Building2, ShieldCheck, MapPin, Star, Zap, Brain, Award, ArrowRight, Heart, Globe, TrendingUp } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import FirebaseDemo from '../components/FirebaseDemo'
+import toast from 'react-hot-toast'
 
 const stats = [
   { label: 'Active Volunteers', value: '2,400+', icon: Users, color: 'text-primary-400' },
@@ -50,7 +52,7 @@ export default function Home() {
             <a href="#how-it-works" className="hover:text-primary-400 transition-colors">How It Works</a>
             <a href="#testimonials" className="hover:text-primary-400 transition-colors">Stories</a>
           </div>
-          {user && (
+          {user && role && (
             <button onClick={handlePortalRedirect} className="btn-primary text-sm py-2 px-4">
               Go to Dashboard →
             </button>
@@ -85,50 +87,68 @@ export default function Home() {
 
           {/* Three CTA Buttons */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto mb-16">
-            <Link
-              to="/auth/volunteer"
+            <button
+              onClick={() => {
+                if (user && !localStorage.getItem('demo_role')) {
+                  navigate(`/${role || 'volunteer'}/dashboard`)
+                } else {
+                  navigate('/auth/volunteer')
+                }
+              }}
               id="cta-volunteer"
-              className="group flex flex-col items-center gap-3 p-6 rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-600/10 border border-primary-500/30 hover:border-primary-400 hover:from-primary-500/30 transition-all duration-300 hover:-translate-y-1"
+              className="group flex flex-col items-center gap-3 p-6 rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-600/10 border border-primary-500/30 hover:border-primary-400 hover:from-primary-500/30 transition-all duration-300 hover:-translate-y-1 w-full text-center"
             >
-              <div className="w-14 h-14 bg-primary-500/20 rounded-2xl flex items-center justify-center group-hover:bg-primary-500/30 transition-colors">
+              <div className="w-14 h-14 bg-primary-500/20 rounded-2xl flex items-center justify-center group-hover:bg-primary-500/30 transition-colors mx-auto">
                 <Users className="w-7 h-7 text-primary-400" />
               </div>
               <div>
                 <div className="font-bold text-white text-lg">Volunteer</div>
                 <div className="text-primary-400 text-sm">Login / Register</div>
               </div>
-              <ArrowRight className="w-4 h-4 text-primary-400 group-hover:translate-x-1 transition-transform" />
-            </Link>
+              <ArrowRight className="w-4 h-4 text-primary-400 group-hover:translate-x-1 transition-transform mx-auto" />
+            </button>
 
-            <Link
-              to="/auth/ngo"
+            <button
+              onClick={() => {
+                if (user && !localStorage.getItem('demo_role')) {
+                  navigate(`/${role || 'ngo'}/dashboard`)
+                } else {
+                  navigate('/auth/ngo')
+                }
+              }}
               id="cta-ngo"
-              className="group flex flex-col items-center gap-3 p-6 rounded-2xl bg-gradient-to-br from-secondary-500/20 to-secondary-600/10 border border-secondary-500/30 hover:border-secondary-400 hover:from-secondary-500/30 transition-all duration-300 hover:-translate-y-1"
+              className="group flex flex-col items-center gap-3 p-6 rounded-2xl bg-gradient-to-br from-secondary-500/20 to-secondary-600/10 border border-secondary-500/30 hover:border-secondary-400 hover:from-secondary-500/30 transition-all duration-300 hover:-translate-y-1 w-full text-center"
             >
-              <div className="w-14 h-14 bg-secondary-500/20 rounded-2xl flex items-center justify-center group-hover:bg-secondary-500/30 transition-colors">
+              <div className="w-14 h-14 bg-secondary-500/20 rounded-2xl flex items-center justify-center group-hover:bg-secondary-500/30 transition-colors mx-auto">
                 <Building2 className="w-7 h-7 text-secondary-400" />
               </div>
               <div>
                 <div className="font-bold text-white text-lg">NGO</div>
                 <div className="text-secondary-400 text-sm">Login / Register</div>
               </div>
-              <ArrowRight className="w-4 h-4 text-secondary-400 group-hover:translate-x-1 transition-transform" />
-            </Link>
+              <ArrowRight className="w-4 h-4 text-secondary-400 group-hover:translate-x-1 transition-transform mx-auto" />
+            </button>
 
-            <Link
-              to="/auth/admin"
+            <button
+              onClick={() => {
+                if (user && !localStorage.getItem('demo_role')) {
+                  navigate(`/${role || 'admin'}/dashboard`)
+                } else {
+                  navigate('/auth/admin')
+                }
+              }}
               id="cta-admin"
-              className="group flex flex-col items-center gap-3 p-6 rounded-2xl bg-gradient-to-br from-gray-700/50 to-gray-800/30 border border-gray-600/50 hover:border-gray-500 transition-all duration-300 hover:-translate-y-1"
+              className="group flex flex-col items-center gap-3 p-6 rounded-2xl bg-gradient-to-br from-gray-700/50 to-gray-800/30 border border-gray-600/50 hover:border-gray-500 transition-all duration-300 hover:-translate-y-1 w-full text-center"
             >
-              <div className="w-14 h-14 bg-gray-700/50 rounded-2xl flex items-center justify-center group-hover:bg-gray-700 transition-colors">
+              <div className="w-14 h-14 bg-gray-700/50 rounded-2xl flex items-center justify-center group-hover:bg-gray-700 transition-colors mx-auto">
                 <ShieldCheck className="w-7 h-7 text-gray-400" />
               </div>
               <div>
                 <div className="font-bold text-white text-lg">Admin</div>
                 <div className="text-gray-400 text-sm">Private Access</div>
               </div>
-              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
-            </Link>
+              <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform mx-auto" />
+            </button>
           </div>
 
           {/* Stats */}
@@ -227,6 +247,12 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </section>
+
+
+      {/* Firebase Demo */}
+      <section className="py-24 px-6 max-w-4xl mx-auto">
+        <FirebaseDemo />
       </section>
 
       {/* Footer */}

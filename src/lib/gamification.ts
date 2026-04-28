@@ -1,7 +1,6 @@
-import type { VolunteerProfile } from './supabase'
+// Gamification constants and utility functions for Bridge India
 
-export function computeTier(profile: Partial<VolunteerProfile>, badgeCount: number): 'newbie' | 'reliable' | 'elite' {
-  const points = profile.points ?? 0
+export function computeTier(points: number, badgeCount: number): 'newbie' | 'reliable' | 'elite' {
   if (points >= 500 && badgeCount >= 5) return 'elite'
   if (points >= 100 && badgeCount >= 2) return 'reliable'
   return 'newbie'

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import Sidebar from '../../components/Sidebar'
-import { CheckCircle2, XCircle, Eye, Filter, Search, MapPin, Phone, Mail } from 'lucide-react'
+import { CheckCircle2, XCircle, Eye, Search, MapPin, Phone, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { supabase } from '../../lib/supabase'
+import { db } from '../../lib/firebase'
+import { doc, updateDoc } from 'firebase/firestore'
 
 const PENDING_USERS = [
   { id: 'v1', name: 'Arjun Sharma', email: 'arjun@email.com', phone: '+91 9876543210', role: 'volunteer', occupation: 'Doctor', location: 'Guntur', proofUrl: 'proof.pdf', submittedAt: '2026-04-26' },
@@ -20,11 +21,16 @@ export default function ApproveVolunteers() {
   const handleAction = async (id: string, name: string, approve: boolean) => {
     setProcessing(id)
     try {
-      await supabase.from('users').update({ approved: approve }).eq('id', id)
+      // For real implementation: update the 'users' collection in Firestore
+      // Use the actual Firebase UID for 'id'
+      const userRef = doc(db, 'users', id)
+      await updateDoc(userRef, { approved: approve })
+      
       setUsers(prev => prev.filter(u => u.id !== id))
       toast.success(`${name} ${approve ? 'approved ✓' : 'rejected ✗'}`)
-    } catch {
-      // Demo mode
+    } catch (error) {
+      console.error('Error updating user approval:', error)
+      // Fallback for demo IDs like 'v1'
       setUsers(prev => prev.filter(u => u.id !== id))
       toast.success(`${name} ${approve ? 'approved ✓' : 'rejected ✗'} (demo)`)
     } finally {

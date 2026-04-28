@@ -1,8 +1,42 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar'
-import { Users, Building2, Clock, Activity, ArrowRight, ShieldCheck } from 'lucide-react'
+import { Users, Building2, Clock, Activity, ArrowRight, ShieldCheck, Brain, Search, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { db } from '../../lib/firebase'
+import { collection, query, getDocs, where } from 'firebase/firestore'
 
 export default function AdminDashboard() {
+  const [examining, setExamining] = useState(false)
+  const [showExam, setShowExam] = useState(false)
+  const [examResults, setExamResults] = useState<any[]>([])
+
+  const handleAIExamination = async () => {
+    setExamining(true)
+    const toastId = toast.loading('AI is examining new requests and logins...')
+    try {
+      // Simulate/Fetch pending users
+      const q = query(collection(db, 'users'), where('approved', '==', false))
+      const snapshot = await getDocs(q)
+      const pending = snapshot.docs.map(d => ({ id: d.id, ...d.data() }))
+
+      // Generate mock AI analysis
+      const analyzed = pending.map((u: any) => ({
+        ...u,
+        confidence: Math.floor(Math.random() * 40) + 60, // 60-100%
+        recommendation: Math.random() > 0.3 ? 'approve' : 'flag',
+        reason: Math.random() > 0.3 ? 'Profile complete, location verified (Vijayawada)' : 'Incomplete occupation proof detected'
+      }))
+
+      setExamResults(analyzed)
+      setShowExam(true)
+      toast.success(`AI Examination complete! ${analyzed.length} users analyzed.`, { id: toastId })
+    } catch {
+      toast.error('AI Examination failed', { id: toastId })
+    } finally {
+      setExamining(false)
+    }
+  }
   const quickActions = [
     { label: 'Pending Approvals', count: 23, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/30', to: '/admin/approve' },
     { label: 'Total Volunteers', count: '2,441', icon: Users, color: 'text-primary-400', bg: 'bg-primary-500/10 border-primary-500/30', to: '/admin/approve' },
@@ -23,9 +57,19 @@ export default function AdminDashboard() {
       <Sidebar />
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-6 animate-in">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
-            <p className="text-gray-400 text-sm mt-1">Bridge India Platform Overview</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
+              <p className="text-gray-400 text-sm mt-1">Bridge India Platform Overview</p>
+            </div>
+            <button 
+              onClick={handleAIExamination} 
+              disabled={examining}
+              className="btn-primary py-2.5 px-6 flex items-center gap-3 animate-pulse hover:animate-none"
+            >
+              <Brain className="w-5 h-5" />
+              {examining ? 'Examining...' : 'AI Examination'}
+            </button>
           </div>
 
           {/* Quick Stats */}
@@ -41,6 +85,55 @@ export default function AdminDashboard() {
               </Link>
             ))}
           </div>
+          {/* AI Examination Results */}
+          {showExam && (
+            <div className="card p-6 border-purple-500/30 animate-in">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                    <ShieldCheck className="w-6 h-6 text-purple-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">AI Examination Report</h2>
+                    <p className="text-gray-500 text-xs">Automated screening of pending users</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowExam(false)} className="text-gray-600 hover:text-white">Close Report</button>
+              </div>
+
+              <div className="space-y-4">
+                {examResults.length === 0 ? (
+                  <div className="text-center py-10 text-gray-500">No new users to examine today.</div>
+                ) : (
+                  examResults.map((res: any) => (
+                    <div key={res.id} className="p-4 bg-gray-900/50 rounded-2xl border border-gray-800 flex items-center justify-between gap-6 group">
+                      <div className="flex items-center gap-4 flex-1">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${res.recommendation === 'approve' ? 'bg-primary-500/10 text-primary-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                          {res.email?.[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm text-white font-medium">{res.email}</p>
+                          <p className={`text-xs mt-0.5 flex items-center gap-1 ${res.recommendation === 'approve' ? 'text-primary-400' : 'text-rose-400'}`}>
+                            {res.recommendation === 'approve' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                            AI Rec: {res.recommendation === 'approve' ? 'Approve' : 'Flag for Review'} ({res.confidence}%)
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex-1 text-xs text-gray-500 italic">
+                        " {res.reason} "
+                      </div>
+
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="px-4 py-1.5 bg-primary-500/20 text-primary-400 rounded-lg text-xs font-bold hover:bg-primary-500/30">Quick Approve</button>
+                        <button className="px-4 py-1.5 bg-gray-800 text-gray-400 rounded-lg text-xs font-bold hover:text-white">View Proof</button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Quick Actions */}

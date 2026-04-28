@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { db } from '../../lib/firebase'
+import { doc, updateDoc } from 'firebase/firestore'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
 import { MapPin, Upload, Save } from 'lucide-react'
@@ -13,11 +14,14 @@ export default function NGOProfile() {
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
+    if (!user) return
     setSaving(true)
     try {
-      await supabase.from('ngo_profiles').update({ name, description, website }).eq('user_id', user!.id)
+      const docRef = doc(db, 'ngo_profiles', user.uid)
+      await updateDoc(docRef, { name, description, website })
       toast.success('NGO profile updated!')
-    } catch {
+    } catch (error) {
+      console.error('Error updating profile:', error)
       toast.error('Save failed')
     } finally {
       setSaving(false)

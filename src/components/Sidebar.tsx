@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { LayoutDashboard, User, Search, Award, LogOut, Heart, History, Video, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, User, Search, Award, LogOut, Heart, History, Video, ChevronRight, Brain, Menu, X } from 'lucide-react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 
 const volunteerLinks = [
@@ -10,6 +11,7 @@ const volunteerLinks = [
   { to: '/volunteer/history', label: 'History', icon: History },
   { to: '/volunteer/badges', label: 'Badges', icon: Award },
   { to: '/volunteer/video', label: 'Video', icon: Video },
+  { to: '/volunteer/analyse', label: 'AI Analyse', icon: Brain },
 ]
 
 const ngoLinks = [
@@ -17,6 +19,7 @@ const ngoLinks = [
   { to: '/ngo/profile', label: 'NGO Profile', icon: User },
   { to: '/ngo/post', label: 'Post Opportunity', icon: Heart },
   { to: '/ngo/applicants', label: 'Applicants', icon: Search },
+  { to: '/ngo/matchmaking', label: 'AI Matchmaking', icon: Brain },
 ]
 
 const adminLinks = [
@@ -24,13 +27,14 @@ const adminLinks = [
   { to: '/admin/approve', label: 'Approve Users', icon: LayoutDashboard },
   { to: '/admin/badges', label: 'Manage Badges', icon: Award },
   { to: '/admin/analytics', label: 'Analytics', icon: LayoutDashboard },
+  { to: '/admin/workflow', label: 'AI Workflow', icon: Brain },
 ]
 
 export default function Sidebar() {
   const { role, signOut } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-
+  const [isOpen, setIsOpen] = useState(false)
   const links = role === 'volunteer' ? volunteerLinks : role === 'ngo' ? ngoLinks : adminLinks
 
   const handleSignOut = async () => {
@@ -45,7 +49,36 @@ export default function Sidebar() {
   const roleColor = role === 'volunteer' ? 'bg-primary-500' : role === 'ngo' ? 'bg-secondary-500' : 'bg-gray-700'
 
   return (
-    <aside className="w-72 min-h-screen bg-[#111827] border-r border-gray-800 flex flex-col">
+    <>
+      {/* Mobile Menu Button */}
+      <button 
+        onClick={() => setIsOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gray-900 border border-gray-800 rounded-lg text-gray-400 hover:text-white"
+      >
+        <Menu className="w-6 h-6" />
+      </button>
+
+      {/* Backdrop for Mobile */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998] lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-[9999]
+        w-72 bg-[#111827] border-r border-gray-800 flex flex-col
+        transition-transform duration-300 lg:translate-x-0
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
+        {/* Mobile Close Button */}
+        <button 
+          onClick={() => setIsOpen(false)}
+          className="lg:hidden absolute top-4 right-4 p-2 text-gray-500 hover:text-white"
+        >
+          <X className="w-5 h-5" />
+        </button>
       {/* User Branding - Matches Screenshot */}
       <div className="p-6 mb-4">
         <div className="flex items-center gap-4">
@@ -94,5 +127,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   )
 }

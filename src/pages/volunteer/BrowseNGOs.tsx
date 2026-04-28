@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState } from 'react'
+import { auth, db } from '../../lib/firebase'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
 import { getAIMatchScore } from '../../lib/ai'
@@ -31,7 +32,7 @@ const DEMO_NGOS = [
 
 export default function BrowseNGOs() {
   const { user } = useAuth()
-  const [ngos, setNgos] = useState(DEMO_NGOS)
+  const [ngos] = useState(DEMO_NGOS)
   const [search, setSearch] = useState('')
   const [filterSkill, setFilterSkill] = useState('')
   const [matchScores, setMatchScores] = useState<Record<string, number>>({})
@@ -43,19 +44,28 @@ export default function BrowseNGOs() {
   )
 
   const getMatchScore = async (ngoId: string) => {
-    const score = await getAIMatchScore(user!.id, ngoId)
+    if (!user) return
+    const score = await getAIMatchScore(user.uid, ngoId)
     setMatchScores(prev => ({ ...prev, [ngoId]: score }))
   }
 
   const handleApply = async (ngoId: string, ngoName: string) => {
     setApplying(ngoId)
     try {
-      const { data: { user: u } } = await supabase.auth.getUser()
-      if (!u) throw new Error('Not logged in')
-      // In real app: insert into applications table
-      await new Promise(r => setTimeout(r, 1000)) // Simulate API
+      const currentUser = auth.currentUser
+      if (!currentUser) throw new Error('Not logged in')
+      
+      // Save application to Firestore
+      await setDoc(doc(db, 'applications', `${currentUser.uid}_${ngoId}`), {
+        volunteer_id: currentUser.uid,
+        ngo_id: ngoId,
+        status: 'pending',
+        applied_at: serverTimestamp()
+      })
+
       toast.success(`Applied to ${ngoName}! +10 pts earned`)
-    } catch {
+    } catch (error) {
+      console.error('Application failed:', error)
       toast.error('Application failed')
     } finally {
       setApplying(null)

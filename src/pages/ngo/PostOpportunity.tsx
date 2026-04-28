@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { db } from '../../lib/firebase'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
 import { Plus, MapPin, DollarSign } from 'lucide-react'
@@ -22,21 +23,25 @@ export default function PostOpportunity() {
   const toggleSkill = (s: string) => setSkills(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
 
   const handlePost = async () => {
+    if (!user) return
     setLoading(true)
     try {
-      const { data: { user: u } } = await supabase.auth.getUser()
-      await supabase.from('opportunities').insert({
-        ngo_id: u!.id,
-        title, description,
+      await addDoc(collection(db, 'opportunities'), {
+        ngo_id: user.uid,
+        title,
+        description,
         skills_req: skills,
-        slots, location,
+        slots,
+        location,
         location_lat: 16.5062,
         location_lng: 80.6480,
         donation_goal: donationGoal > 0 ? donationGoal : null,
+        created_at: serverTimestamp()
       })
       toast.success('Opportunity posted! AI matching started.')
       navigate('/ngo/applicants')
-    } catch {
+    } catch (error) {
+      console.error('Error posting opportunity:', error)
       toast.error('Failed to post opportunity')
     } finally {
       setLoading(false)

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Home from './pages/Home'
@@ -19,14 +19,21 @@ import AdminDashboard from './pages/admin/Dashboard'
 import ApproveVolunteers from './pages/admin/ApproveVolunteers'
 import ManageBadges from './pages/admin/ManageBadges'
 import Analytics from './pages/admin/Analytics'
+import PublicProfiles from './pages/PublicProfiles'
+import AIMatchmaking from './pages/ngo/AIMatchmaking'
+import AIWorkflow from './pages/admin/AIWorkflow'
+import AIAnalyse from './pages/volunteer/AIAnalyse'
+import AIChatbot from './components/AIChatbot'
 
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode, allowedRole: string }) {
   const { user, role, loading } = useAuth()
-  if (loading) return (
+  
+  if (loading || (user && !role)) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950">
       <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
     </div>
   )
+  
   if (!user) return <Navigate to="/" replace />
   if (role !== allowedRole) return <Navigate to="/" replace />
   return <>{children}</>
@@ -59,6 +66,9 @@ function AppRoutes() {
       <Route path="/volunteer/video" element={
         <ProtectedRoute allowedRole="volunteer"><VolunteerVideo /></ProtectedRoute>
       } />
+      <Route path="/volunteer/analyse" element={
+        <ProtectedRoute allowedRole="volunteer"><AIAnalyse /></ProtectedRoute>
+      } />
       
       {/* NGO routes */}
       <Route path="/ngo/dashboard" element={
@@ -72,6 +82,9 @@ function AppRoutes() {
       } />
       <Route path="/ngo/applicants" element={
         <ProtectedRoute allowedRole="ngo"><ViewApplicants /></ProtectedRoute>
+      } />
+      <Route path="/ngo/matchmaking" element={
+        <ProtectedRoute allowedRole="ngo"><AIMatchmaking /></ProtectedRoute>
       } />
       
       {/* Admin routes */}
@@ -87,6 +100,13 @@ function AppRoutes() {
       <Route path="/admin/analytics" element={
         <ProtectedRoute allowedRole="admin"><Analytics /></ProtectedRoute>
       } />
+      <Route path="/admin/workflow" element={
+        <ProtectedRoute allowedRole="admin"><AIWorkflow /></ProtectedRoute>
+      } />
+      {/* Shared routes */}
+      <Route path="/community/profiles" element={
+        <ProtectedRoute allowedRole={localStorage.getItem('demo_role') || 'volunteer'}><PublicProfiles /></ProtectedRoute>
+      } />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -96,8 +116,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
+      <HashRouter>
         <AppRoutes />
+        <AIChatbot />
         <Toaster
           position="top-right"
           toastOptions={{
@@ -111,7 +132,7 @@ export default function App() {
             error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
           }}
         />
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   )
 }
