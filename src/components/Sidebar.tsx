@@ -24,9 +24,9 @@ const ngoLinks = [
 
 const adminLinks = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/approve', label: 'Approve Users', icon: LayoutDashboard },
+  { to: '/admin/approve', label: 'Approve Users', icon: User },
   { to: '/admin/badges', label: 'Manage Badges', icon: Award },
-  { to: '/admin/analytics', label: 'Analytics', icon: LayoutDashboard },
+  { to: '/admin/analytics', label: 'Analytics', icon: Search },
   { to: '/admin/workflow', label: 'AI Workflow', icon: Brain },
 ]
 
@@ -35,7 +35,12 @@ export default function Sidebar() {
   const location = useLocation()
   const navigate = useNavigate()
   const [isOpen, setIsOpen] = useState(false)
-  const links = role === 'volunteer' ? volunteerLinks : role === 'ngo' ? ngoLinks : adminLinks
+  
+  // Force admin sidebar for prototype bypass on admin routes
+  const isAdminRoute = location.pathname.startsWith('/admin')
+  const activeRole = isAdminRoute ? 'admin' : role
+
+  const links = activeRole === 'volunteer' ? volunteerLinks : activeRole === 'ngo' ? ngoLinks : adminLinks
 
   const handleSignOut = async () => {
     await signOut()
@@ -43,10 +48,10 @@ export default function Sidebar() {
     navigate('/')
   }
 
-  const roleTitle = role === 'volunteer' ? 'VolunteerBridge' : role === 'ngo' ? 'NGOBridge' : 'AdminBridge'
-  const roleSubtitle = role === 'volunteer' ? 'Volunteer Dashboard' : role === 'ngo' ? 'NGO Dashboard' : 'Admin Portal'
-  const roleInitial = role === 'volunteer' ? 'VB' : role === 'ngo' ? 'NB' : 'AB'
-  const roleColor = role === 'volunteer' ? 'bg-primary-500' : role === 'ngo' ? 'bg-secondary-500' : 'bg-gray-700'
+  const roleTitle = activeRole === 'volunteer' ? 'VolunteerBridge' : activeRole === 'ngo' ? 'NGOBridge' : 'AdminBridge'
+  const roleSubtitle = activeRole === 'volunteer' ? 'Volunteer Dashboard' : activeRole === 'ngo' ? 'NGO Dashboard' : 'Admin Portal'
+  const roleInitial = activeRole === 'volunteer' ? 'VB' : activeRole === 'ngo' ? 'NB' : 'AB'
+  const roleColor = activeRole === 'volunteer' ? 'bg-primary-500' : activeRole === 'ngo' ? 'bg-secondary-500' : 'bg-gray-700'
 
   return (
     <>
