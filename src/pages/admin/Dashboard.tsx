@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import Sidebar from '../../components/Sidebar'
 import { Users, Building2, Clock, Activity, ArrowRight, ShieldCheck, Brain, Search, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
@@ -14,9 +14,9 @@ export default function AdminDashboard() {
   const [healthReport, setHealthReport] = useState('')
   const [healthLoading, setHealthLoading] = useState(false)
 
-  useState(() => {
+  useEffect(() => {
     fetchHealthReport()
-  })
+  }, [])
 
   const fetchHealthReport = async () => {
     setHealthLoading(true)
