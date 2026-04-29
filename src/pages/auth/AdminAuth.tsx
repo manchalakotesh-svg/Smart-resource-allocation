@@ -1,40 +1,8 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { ShieldCheck, ArrowLeft, Eye, EyeOff } from 'lucide-react'
-import { auth, db } from '../../lib/firebase'
-import { signInWithEmailAndPassword } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
-import toast from 'react-hot-toast'
+import { Link } from 'react-router-dom'
+import { ShieldCheck, ArrowLeft } from 'lucide-react'
 
 export default function AdminAuth() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [showPass, setShowPass] = useState(false)
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      const { user } = await signInWithEmailAndPassword(auth, email, password)
-      
-      // Verify admin role in Firestore
-      const userDoc = await getDoc(doc(db, 'users', user.uid))
-      if (userDoc.exists() && userDoc.data().role === 'admin') {
-        toast.success('Admin access granted')
-        navigate('/admin/dashboard')
-      } else {
-        await auth.signOut()
-        toast.error('Unauthorized: This account does not have administrative privileges.')
-      }
-    } catch (err: any) {
-      console.error('Admin Auth Error:', err)
-      toast.error('Invalid admin credentials or network error.')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-16">
@@ -54,48 +22,20 @@ export default function AdminAuth() {
             </div>
           </div>
           
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div>
-              <label className="text-sm text-gray-400 mb-2 block">Admin Email</label>
-              <input 
-                type="email" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                placeholder="admin@bridgeindia.gov.in" 
-                className="input-field"
-                required
-              />
+          <div className="space-y-6 text-center">
+            <div className="bg-primary-900/20 border border-primary-500/20 rounded-xl p-6">
+              <p className="text-primary-400 font-medium">
+                As it is a prototype, pass is disabled.
+              </p>
             </div>
             
-            <div>
-              <label className="text-sm text-gray-400 mb-2 block">Secret Key / Password</label>
-              <div className="relative">
-                <input 
-                  type={showPass ? 'text' : 'password'} 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)} 
-                  placeholder="••••••••" 
-                  className="input-field"
-                  required
-                />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPass(!showPass)} 
-                  className="absolute right-3 top-3.5 text-gray-400 hover:text-white"
-                >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              disabled={loading || !email || !password} 
-              className="btn-primary w-full disabled:opacity-50 mt-4"
+            <Link 
+              to="/" 
+              className="btn-primary w-full block text-center"
             >
-              {loading ? 'Verifying...' : 'Authorize Access'}
-            </button>
-          </form>
+              Return to Home
+            </Link>
+          </div>
 
           <p className="text-center text-[10px] text-gray-600 mt-8 uppercase tracking-widest">
             Restricted System • Authorized Personnel Only
