@@ -54,48 +54,20 @@ export default function AdminAuth() {
             </div>
           </div>
           
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div>
-              <label className="text-sm text-gray-400 mb-2 block">Admin Email</label>
-              <input 
-                type="email" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                placeholder="admin@bridgeindia.gov.in" 
-                className="input-field"
-                required
-              />
+          <div className="space-y-6 text-center">
+            <div className="bg-primary-900/20 border border-primary-500/20 rounded-xl p-6 mb-6">
+              <p className="text-primary-400 font-medium">
+                As it is a prototype, admin pass is disabled.
+              </p>
             </div>
             
-            <div>
-              <label className="text-sm text-gray-400 mb-2 block">Secret Key / Password</label>
-              <div className="relative">
-                <input 
-                  type={showPass ? 'text' : 'password'} 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)} 
-                  placeholder="••••••••" 
-                  className="input-field"
-                  required
-                />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPass(!showPass)} 
-                  className="absolute right-3 top-3.5 text-gray-400 hover:text-white"
-                >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
             <button 
-              type="submit" 
-              disabled={loading || !email || !password} 
-              className="btn-primary w-full disabled:opacity-50 mt-4"
+              onClick={() => navigate('/admin/dashboard')}
+              className="btn-primary w-full block text-center"
             >
-              {loading ? 'Verifying...' : 'Authorize Access'}
+              Enter Admin Dashboard
             </button>
-          </form>
+          </div>
 
           <p className="text-center text-[10px] text-gray-600 mt-8 uppercase tracking-widest">
             Restricted System • Authorized Personnel Only

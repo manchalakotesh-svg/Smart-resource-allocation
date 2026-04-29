@@ -28,6 +28,11 @@ import AIChatbot from './components/AIChatbot'
 function ProtectedRoute({ children, allowedRole }: { children: React.ReactNode, allowedRole: string }) {
   const { user, role, loading } = useAuth()
   
+  // Prototype Bypass: Admin portal is open for demo
+  if (allowedRole === 'admin') {
+    return <>{children}</>
+  }
+  
   if (loading || (user && !role)) return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950">
       <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
