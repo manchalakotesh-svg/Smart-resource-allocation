@@ -119,18 +119,18 @@ export default function Sidebar() {
             </Link>
           )
         })}
-      </nav>
 
-      {/* Footer / Sign Out */}
-      <div className="p-4 mt-auto">
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-3 px-4 py-4 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-gray-800/50 w-full transition-all group"
-        >
-          <LogOut className="w-5 h-5 text-gray-500 group-hover:text-red-400 transition-colors" />
-          Sign Out
-        </button>
-      </div>
+        {/* Sign Out Button - Moved up right after links */}
+        <div className="pt-2 mt-2">
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800/50 w-full transition-all group"
+          >
+            <LogOut className="w-5 h-5 shrink-0 text-gray-500 group-hover:text-red-400 transition-colors" />
+            Sign Out
+          </button>
+        </div>
+      </nav>
     </aside>
     </>
   )
