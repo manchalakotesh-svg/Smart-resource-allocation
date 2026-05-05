@@ -109,6 +109,8 @@ export default function NGODashboard() {
     } finally {
       setMatching(false)
     }
+  }
+
   const handleSignOut = async () => {
     await signOut()
     toast.success('Signed out')

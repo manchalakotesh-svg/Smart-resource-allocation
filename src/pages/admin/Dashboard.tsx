@@ -88,6 +88,12 @@ export default function AdminDashboard() {
               <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
               <p className="text-gray-400 text-sm mt-1">Bridge India Platform Overview</p>
             </div>
+            <button 
+              onClick={handleAIExamination} 
+              disabled={examining}
+              className="btn-primary py-2.5 px-6 flex items-center gap-3 animate-pulse hover:animate-none"
+            >
+              <Brain className="w-5 h-5" />
               {examining ? 'Examining...' : 'AI Examination'}
             </button>
             <button

@@ -142,6 +142,8 @@ export default function VolunteerDashboard() {
     } finally {
       setChatLoading(false)
     }
+  }
+
   const handleSignOut = async () => {
     await signOut()
     toast.success('Signed out')
