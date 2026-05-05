@@ -8,7 +8,7 @@ import Sidebar from '../../components/Sidebar'
 import GamificationBar from '../../components/GamificationBar'
 import { chatbotQuery, generateAIStory, getAIMatchScore, getAISkillRecommendations } from '../../lib/ai'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { FileText, Eye, Brain, Bell, Video, Calendar, MapPin, CheckCircle2, Clock, MessageSquare, Send } from 'lucide-react'
+import { FileText, Eye, Brain, Bell, Video, Calendar, MapPin, CheckCircle2, Clock, MessageSquare, Send, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import jsPDF from 'jspdf'
 
@@ -25,7 +25,7 @@ const recentActivities = [
 ]
 
 export default function VolunteerDashboard() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [profile, setProfile] = useState<any>(null)
   const [skillRecs, setSkillRecs] = useState<string[]>([])
@@ -142,6 +142,10 @@ export default function VolunteerDashboard() {
     } finally {
       setChatLoading(false)
     }
+  const handleSignOut = async () => {
+    await signOut()
+    toast.success('Signed out')
+    navigate('/')
   }
 
   return (
@@ -164,6 +168,12 @@ export default function VolunteerDashboard() {
               </button>
               <button onClick={handleDownloadCert} id="download-cert" className="btn-outline text-sm py-2 px-4 flex items-center gap-2">
                 <FileText className="w-4 h-4" />PDF Certificate
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-sm py-2 px-4 rounded-xl flex items-center gap-2 transition-all"
+              >
+                <LogOut className="w-4 h-4" />Sign Out
               </button>
             </div>
           </div>

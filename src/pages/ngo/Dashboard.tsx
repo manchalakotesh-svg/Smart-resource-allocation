@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { Users, MessageSquare, Plus, Zap, Clock, Brain, MapPin, Search } from 'lucide-react'
+import { Users, MessageSquare, Plus, Zap, Clock, Brain, MapPin, Search, LogOut } from 'lucide-react'
 import { chatbotQuery, generateNGOImpactSummary } from '../../lib/ai'
 import { db } from '../../lib/firebase'
 import { doc, getDoc } from 'firebase/firestore'
@@ -22,7 +22,7 @@ const recentApplicants = [
 ]
 
 export default function NGODashboard() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [chatMsg, setChatMsg] = useState('')
   const [chatReply, setChatReply] = useState('')
@@ -109,6 +109,10 @@ export default function NGODashboard() {
     } finally {
       setMatching(false)
     }
+  const handleSignOut = async () => {
+    await signOut()
+    toast.success('Signed out')
+    navigate('/')
   }
 
   return (
@@ -134,6 +138,12 @@ export default function NGODashboard() {
                 className="btn-secondary text-sm py-2 px-4 flex items-center gap-2"
               >
                 <MessageSquare className="w-4 h-4" />AI Assistant
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-sm py-2 px-4 rounded-xl flex items-center gap-2 transition-all"
+              >
+                <LogOut className="w-4 h-4" />Sign Out
               </button>
             </div>
           </div>

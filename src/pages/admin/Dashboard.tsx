@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import Sidebar from '../../components/Sidebar'
-import { Users, Building2, Clock, Activity, ArrowRight, ShieldCheck, Brain, Search, CheckCircle2, AlertTriangle, ChevronDown } from 'lucide-react'
+import { Users, Building2, Clock, Activity, ArrowRight, ShieldCheck, Brain, Search, CheckCircle2, AlertTriangle, ChevronDown, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { db } from '../../lib/firebase'
 import { collection, query, getDocs, where } from 'firebase/firestore'
 import { getAIPlatformHealthReport } from '../../lib/ai'
 
 export default function AdminDashboard() {
+  const { signOut } = useAuth()
+  const navigate = useNavigate()
   const [examining, setExamining] = useState(false)
   const [showExam, setShowExam] = useState(false)
   const [examResults, setExamResults] = useState<any[]>([])
@@ -69,6 +72,12 @@ export default function AdminDashboard() {
     { msg: 'New opportunity posted: Digital Literacy — Tirupati', time: '5 hrs ago', type: 'opportunity' },
   ]
 
+  const handleSignOut = async () => {
+    await signOut()
+    toast.success('Signed out')
+    navigate('/')
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-950">
       <Sidebar />
@@ -79,13 +88,13 @@ export default function AdminDashboard() {
               <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
               <p className="text-gray-400 text-sm mt-1">Bridge India Platform Overview</p>
             </div>
-            <button 
-              onClick={handleAIExamination} 
-              disabled={examining}
-              className="btn-primary py-2.5 px-6 flex items-center gap-3 animate-pulse hover:animate-none"
-            >
-              <Brain className="w-5 h-5" />
               {examining ? 'Examining...' : 'AI Examination'}
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-sm py-2 px-4 rounded-xl flex items-center gap-2 transition-all"
+            >
+              <LogOut className="w-4 h-4" />Sign Out
             </button>
           </div>
 
